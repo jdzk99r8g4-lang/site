@@ -140,15 +140,15 @@ describe('table des routes', () => {
 
   it('réécrit un chemin localisé vers sa route canonique', () => {
     expect(toCanonicalPath('es', 'calefaccion/estufas-de-pellets')).toBe('/es/shop/pellet');
-    expect(toCanonicalPath('nl', 'verwarming/inbouwhaarden')).toBe('/nl/shop/insert');
-    expect(toCanonicalPath('fr', 'chauffage/pompe-a-chaleur')).toBe('/fr/shop/heatpump');
+    expect(toCanonicalPath('nl', 'verwarming/bio-ethanolhaarden')).toBe('/nl/shop/bioethanol');
+    expect(toCanonicalPath('fr', 'chauffage/cheminee-electrique')).toBe('/fr/shop/electricfire');
   });
 
   it('fait gagner le préfixe le plus long : une catégorie n’avale pas ses enfants', () => {
     // Sans tri décroissant, « chauffage » capturerait « chauffage/chaudiere »
     // et l'ombrelle répondrait à la place de la famille.
     expect(toCanonicalPath('fr', 'chauffage')).toBe('/fr/shop');
-    expect(toCanonicalPath('fr', 'chauffage/chaudiere')).toBe('/fr/shop/boiler');
+    expect(toCanonicalPath('fr', 'chauffage/cheminee-bioethanol')).toBe('/fr/shop/bioethanol');
   });
 
   it('ne réécrit pas quand le chemin public est déjà le chemin canonique', () => {
@@ -159,8 +159,8 @@ describe('table des routes', () => {
   });
 
   it('réécrit le préfixe d’une fiche produit en gardant le slug', () => {
-    expect(toCanonicalPath('es', 'calefaccion/p/idro-15-hidro-radiadores')).toBe(
-      '/es/shop/p/idro-15-hidro-radiadores',
+    expect(toCanonicalPath('es', 'calefaccion/p/kekai-oregon-chimenea-electrica-pared-127-cm')).toBe(
+      '/es/shop/p/kekai-oregon-chimenea-electrica-pared-127-cm',
     );
   });
 
@@ -211,11 +211,11 @@ describe('équivalences entre langues', () => {
   });
 
   it('donne les quatre équivalences, toutes préfixées de leur langue', () => {
-    const all = allEquivalents('/fr/chauffage/poele-a-bois');
+    const all = allEquivalents('/fr/chauffage/cheminee-bioethanol');
     for (const locale of locales) {
       expect(all[locale].startsWith(`/${locale}`), locale).toBe(true);
     }
-    expect(all.fr).toBe('/fr/chauffage/poele-a-bois');
+    expect(all.fr).toBe('/fr/chauffage/cheminee-bioethanol');
   });
 });
 
@@ -229,8 +229,8 @@ describe('redirection du chemin canonique vers le chemin public', () => {
   });
 
   it('redirige aussi le préfixe d’une fiche produit, slug conservé', () => {
-    expect(toLocalizedPath('fr', 'shop/p/aria-6-poele-air-ventile')).toBe(
-      '/fr/chauffage/p/aria-6-poele-air-ventile',
+    expect(toLocalizedPath('fr', 'shop/p/kekai-etna-cheminee-bioethanol-de-table')).toBe(
+      '/fr/chauffage/p/kekai-etna-cheminee-bioethanol-de-table',
     );
   });
 

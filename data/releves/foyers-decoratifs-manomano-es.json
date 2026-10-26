@@ -448,6 +448,18 @@
   ],
   "chimeneas_electricas": [
     {
+      "nom": "Chimenea eléctrica Lynea, Blanco, 100 cm con efecto de llama realista y calefactor de 1800 W, Vicco",
+      "marque": "VICCO",
+      "prix": "292,90 €",
+      "prixBarre": null,
+      "note": 5.0,
+      "avis": 1,
+      "url": "https://www.manomano.es/p/chimenea-electrica-lynea-blanco-100-cm-con-efecto-de-llama-realista-y-calefactor-de-1800-w-vicco-86939488",
+      "imageSource": "https://cdn.manomano.com/pim-media/images/medium/78135c5f955472de66c70fb8ec73dedba4391bd4.jpg",
+      "retenu_catalogue": "elec-vicco-lynea",
+      "_variante": "blanc"
+    },
+    {
       "nom": "Douche électrique HOMCOM, 1800W avec effet de 3 flammes lumineuses, thermostat, minute 6 h/semaine, télécommande, nature",
       "marque": "HOMCOM",
       "prix": "197,99 €",
@@ -668,7 +680,9 @@
       "note": null,
       "avis": null,
       "url": "https://www.manomano.es/p/chimenea-electrica-lynea-negro-100-cm-con-efecto-de-llama-realista-y-calefactor-de-1800-w-vicco-86939569",
-      "imageSource": "https://cdn.manomano.com/pim-media/images/medium/a984c470900bcb8276ba90b1002abb4ea146f35b.jpg"
+      "imageSource": "https://cdn.manomano.com/pim-media/images/medium/a984c470900bcb8276ba90b1002abb4ea146f35b.jpg",
+      "retenu_catalogue": "elec-vicco-lynea",
+      "_variante": "noir"
     },
     {
       "nom": "Chimenea eléctrica PARED 1800W",
@@ -700,16 +714,6 @@
       "avis": null,
       "url": "https://www.manomano.es/p/homcom-chimenea-electrica-pared-y-empotrable-ultrafina-con-llama-3d-ajustable-y-12-colores-guijarros-9001800w-temporizador-termostato-digital-92282633",
       "imageSource": "https://cdn.manomano.com/pim-media/images/medium/a85c5266410bf0299cba65f631cf002542147ec6.jpg"
-    },
-    {
-      "nom": "Chimenea eléctrica Lynea, Blanco, 100 cm con efecto de llama realista y calefactor de 1800 W, Vicco",
-      "marque": "VICCO",
-      "prix": "292,90 €",
-      "prixBarre": null,
-      "note": 5.0,
-      "avis": 1,
-      "url": "https://www.manomano.es/p/chimenea-electrica-lynea-blanco-100-cm-con-efecto-de-llama-realista-y-calefactor-de-1800-w-vicco-86939488",
-      "imageSource": "https://cdn.manomano.com/pim-media/images/medium/78135c5f955472de66c70fb8ec73dedba4391bd4.jpg"
     },
     {
       "nom": "Chimenea Eléctrica Usini, Calefacción Hasta 30 m², Potencia (kW) 0.75/1.5, Interior, 101x20x44h cm Negro",

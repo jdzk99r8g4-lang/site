@@ -56,18 +56,6 @@ export const sourcing: Record<string, SourcingLine> = {
   'vertigo-up': { supplierSku: 'ETNA-VERTIGO-UP', costNet: euros(1520), leadTimeDays: 3, inboundShipping: euros(64) },
   // PROVISOIRE — ETNA Vulcano Silenzio Up.
   'vulcano-silenzio-up': { supplierSku: 'ETNA-VULCANO-SIL-UP', costNet: euros(1460), leadTimeDays: 3, inboundShipping: euros(62) },
-  'aria-6': { supplierSku: 'IT-ARIA-06N', costNet: euros(742), leadTimeDays: 2, inboundShipping: euros(48) },
-  'aria-9-canal': { supplierSku: 'IT-ARIA-09C', costNet: euros(1118), leadTimeDays: 2, inboundShipping: euros(56) },
-  'vela-8-slim': { supplierSku: 'IT-VELA-08S', costNet: euros(1205), leadTimeDays: 3, inboundShipping: euros(52) },
-  'aria-12-duo': { supplierSku: 'IT-ARIA-12D', costNet: euros(1376), leadTimeDays: 3, inboundShipping: euros(64) },
-  'idro-12-compact': { supplierSku: 'IT-IDRO-12C', costNet: euros(1592), leadTimeDays: 3, inboundShipping: euros(72) },
-  'idro-15': { supplierSku: 'IT-IDRO-15', costNet: euros(1854), leadTimeDays: 3, inboundShipping: euros(78) },
-  'idro-20-ecs': { supplierSku: 'IT-IDRO-20S', costNet: euros(2310), leadTimeDays: 4, inboundShipping: euros(88) },
-  'idro-24-plus': { supplierSku: 'IT-IDRO-24P', costNet: euros(2584), leadTimeDays: 5, inboundShipping: euros(96) },
-  'kit-conduit-80': { supplierSku: 'PL-FLUE-80K4', costNet: euros(152), leadTimeDays: 2, inboundShipping: euros(18) },
-  'thermostat-wifi': { supplierSku: 'CN-THW-210', costNet: euros(52), leadTimeDays: 1, inboundShipping: euros(4) },
-  'aspirateur-cendres': { supplierSku: 'PL-ASH-20L', costNet: euros(34), leadTimeDays: 1, inboundShipping: euros(7) },
-  'granules-palette': { supplierSku: 'FR-PEL-DIN1T', costNet: euros(286), leadTimeDays: 3, inboundShipping: euros(42) },
 
   // ─────────────────── FOYERS DÉCORATIFS — COÛTS CALCULÉS ───────────────────
   //
@@ -113,6 +101,8 @@ export const sourcing: Record<string, SourcingLine> = {
   'elec-pzcc-121': { supplierSku: 'ELE-PZC-121INS', costNet: euros(136.8), leadTimeDays: 4, inboundShipping: euros(19.0) },
   // 409,90 € TTC → 341,58 € HT ; revient 187,90 € ; marge 45,0 %.
   'elec-oregon': { supplierSku: 'ELE-KEK-OREG127', costNet: euros(172.9), leadTimeDays: 3, inboundShipping: euros(15.0) },
+  // 299,90 € TTC → 249,92 € HT ; revient 137,50 € ; marge 45,0 %,
+  'elec-vicco-lynea': { supplierSku: 'ELE-VIC-LYNEA100', costNet: euros(128.5), leadTimeDays: 3, inboundShipping: euros(9.0) },
 };
 
 /** Coût d'achat marchandise d'un produit, HT, transport amont exclu. */

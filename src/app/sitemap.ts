@@ -33,16 +33,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const priorities: Partial<Record<RouteName, number>> = {
     home: 1,
     shop: 0.9,
-    // Les familles d'appareils portent l'essentiel de la recherche.
+    // Les familles portent l'essentiel de la recherche. Les granulés d'abord :
+    // c'est la seule des trois dont les fiches viennent de la documentation du
+    // fabricant, et le seul vrai appareil de chauffage du catalogue.
     pellet: 0.9,
-    wood: 0.9,
-    insert: 0.85,
-    boiler: 0.85,
-    heatpump: 0.85,
-    cookstove: 0.8,
+    bioethanol: 0.8,
+    electricfire: 0.8,
     sizing: 0.8,
-    flue: 0.7,
-    accessory: 0.7,
     guides: 0.7,
     faq: 0.6,
     shipping: 0.5,

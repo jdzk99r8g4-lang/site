@@ -22,13 +22,61 @@
  */
 
 import { generatedMedia, type GeneratedImage } from './product-media.generated';
+import { remoteMediaCount } from './media-remote.generated';
 import type { Product, ProductImage } from './catalog.types';
 import type { Locale } from './i18n/config';
 
-/** Visuels à afficher pour un produit : photos réelles si présentes, sinon illustrations. */
+/**
+ * Visuels distants, servis par `/api/media/<id>/<n>`.
+ *
+ * Le chemin est le nôtre, et c'est tout l'intérêt : l'adresse d'origine reste
+ * côté serveur (`media-remote-sources.ts`), donc elle n'apparaît ni dans le
+ * HTML, ni dans le bundle, et aucune fiche ne renvoie vers ailleurs.
+ *
+ * Pas de `intrinsic` : la résolution n'est connue qu'après téléchargement, et
+ * la mesurer au build voudrait dire les télécharger tous. L'image remplit donc
+ * son cadre comme avant — ce qui est le bon compromis tant qu'on ne les a pas
+ * en local, où `media:scan` les mesure.
+ */
+function remoteImages(product: Product): readonly ProductImage[] {
+  const combien = remoteMediaCount[product.id] ?? 0;
+  if (combien === 0) return [];
+
+  const principal = product.images[0]?.alt;
+  return Array.from({ length: combien }, (_, index) => {
+    const position = index + 1;
+    return {
+      src: `/api/media/${product.id}/${position}`,
+      alt:
+        index === 0 && principal
+          ? principal
+          : {
+              fr: `${product.name} — vue ${position}`,
+              en: `${product.name} — view ${position}`,
+              nl: `${product.name} — weergave ${position}`,
+              es: `${product.name} — vista ${position}`,
+            },
+      placeholder: false,
+    };
+  });
+}
+
+/**
+ * Visuels à afficher, par ordre de préférence.
+ *
+ *   1. les photos déposées en local — mesurées, servies en statique, à nous ;
+ *   2. les visuels distants relevés, passés par notre route d'API ;
+ *   3. l'illustration de substitution déclarée au catalogue.
+ *
+ * Le local d'abord, sans condition : une photo qu'on héberge ne dépend de
+ * personne et ne coûte pas une requête chez un tiers à chaque affichage.
+ */
 export function resolveImages(product: Product): readonly ProductImage[] {
   const real = generatedMedia[product.id];
-  if (!real || real.length === 0) return product.images;
+  if (!real || real.length === 0) {
+    const distants = remoteImages(product);
+    return distants.length > 0 ? distants : product.images;
+  }
 
   // La description du catalogue sert au visuel principal ; les suivants sont
   // numérotés. Répéter la même alternative sur cinq photos la rend inutile

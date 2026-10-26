@@ -8,7 +8,7 @@ import {
   getStoves,
   getProductsByCategory,
 } from '@/lib/catalog';
-import { isAppliance, productCategories, type ProductCategory } from '@/lib/catalog.types';
+import { heatDistributions, isAppliance, productCategories, type ProductCategory } from '@/lib/catalog.types';
 import { guides, getGuideBySlug } from '@/lib/guides';
 import { hasOnlyPlaceholders } from '@/lib/product-media';
 import { locales } from '@/lib/i18n/config';
@@ -130,12 +130,24 @@ describe('intégrité du catalogue', () => {
     }
   });
 
-  it('présente les deux modes de diffusion chez les poêles à granulés', () => {
-    // Seule famille garnie pour l'instant : c'est là que le choix air / hydro
-    // se pose, et la page la présente en deux groupes.
+  it('donne un mode de diffusion à chaque poêle à granulés', () => {
+    /*
+     * Ce test exigeait que la famille présente les DEUX modes, air et hydro,
+     * parce que la page les affiche en deux groupes quand les deux
+     * coexistent. Les fiches hydro étaient des données de démonstration, et
+     * elles ont été retirées : exiger leur présence reviendrait à exiger le
+     * retour de produits inventés.
+     *
+     * Ce qui reste vrai et vérifiable : un poêle à granulés diffuse forcément
+     * de l'une des deux façons, jamais d'aucune. Le groupement de la page,
+     * lui, est déjà couvert — il ne se déclenche que si deux modes
+     * coexistent, et `category-view.tsx` le filtre sur les listes non vides.
+     */
     const granules = getProductsByCategory('pellet');
-    expect(granules.some((p) => p.distribution === 'air')).toBe(true);
-    expect(granules.some((p) => p.distribution === 'hydro')).toBe(true);
+    expect(granules.length).toBeGreaterThan(0);
+    for (const product of granules) {
+      expect(heatDistributions, product.id).toContain(product.distribution);
+    }
   });
 
   it('ne prête un mode de diffusion qu’à un appareil', () => {

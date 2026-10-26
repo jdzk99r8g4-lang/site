@@ -36,9 +36,15 @@ export function categoryLinks(locale: Locale, dict: Dictionary): readonly Catego
 }
 
 /**
- * Sous-ensemble affiché dans la barre du haut. Dix entrées n'y tiennent pas
- * à côté du logo, du sélecteur de langue et du panier ; les sept autres
- * restent à un clic, par « tout le chauffage » et par le menu mobile, qui lui
- * les porte toutes.
+ * Sous-ensemble affiché dans la barre du haut.
+ *
+ * Les trois familles y tiennent, donc la barre les porte toutes et ce
+ * sous-ensemble est aujourd'hui le tout. Il reste une liste distincte parce
+ * que c'est elle qui arbitrera le jour où une quatrième famille arrivera :
+ * la place à côté du logo, du sélecteur de langue et du panier est comptée.
  */
-export const headlineCategories = ['pellet', 'wood', 'insert'] as const satisfies readonly ProductCategory[];
+export const headlineCategories = [
+  'pellet',
+  'bioethanol',
+  'electricfire',
+] as const satisfies readonly ProductCategory[];

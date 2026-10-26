@@ -164,7 +164,7 @@ export const guides: readonly Guide[] = [
         },
       },
     ],
-    relatedProducts: ['aria-9-canal', 'idro-15', 'idro-20-ecs'],
+    relatedProducts: ['anna-12', 'vertigo-up', 'vulcano-silenzio-up'],
   },
   {
     id: 'sizing',
@@ -270,7 +270,7 @@ export const guides: readonly Guide[] = [
         },
       },
     ],
-    relatedProducts: ['aria-6', 'vela-8-slim', 'idro-12-compact'],
+    relatedProducts: ['anna-12', 'vertigo-up', 'vulcano-silenzio-up'],
   },
   {
     id: 'savings',
@@ -371,7 +371,7 @@ export const guides: readonly Guide[] = [
         },
       },
     ],
-    relatedProducts: ['granules-palette', 'thermostat-wifi', 'aspirateur-cendres'],
+    relatedProducts: ['anna-12', 'vulcano-silenzio-up'],
   },
 ];
 

@@ -80,7 +80,7 @@ describe('approvisionnement', () => {
   it('retient le délai de préparation le plus long de la commande', () => {
     // Une commande part en une seule expédition : c'est la ligne la plus
     // lente qui fixe la date annoncée au client.
-    const refs = ['thermostat-wifi', 'idro-24-plus'];
+    const refs = ['bio-etna-table', 'bio-revello'];
     const longest = Math.max(...refs.map((id) => sourcing[id]?.leadTimeDays ?? 0));
     expect(maxLeadTimeDays(refs)).toBe(longest);
   });

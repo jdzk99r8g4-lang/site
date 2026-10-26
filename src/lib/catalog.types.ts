@@ -10,17 +10,7 @@ import type { Localized } from './i18n/config';
  * La distinction air / hydro, elle, se joue À L'INTÉRIEUR d'une famille, et
  * vit dans `distribution` plus bas.
  */
-export type ProductCategory =
-  | 'pellet'
-  | 'wood'
-  | 'cookstove'
-  | 'boiler'
-  | 'insert'
-  | 'heatpump'
-  | 'bioethanol'
-  | 'electricfire'
-  | 'flue'
-  | 'accessory';
+export type ProductCategory = 'pellet' | 'bioethanol' | 'electricfire';
 
 /**
  * Ordre d'affichage : des appareils les plus demandés vers le périphérique.
@@ -32,15 +22,8 @@ export type ProductCategory =
  */
 export const productCategories = [
   'pellet',
-  'wood',
-  'cookstove',
-  'boiler',
-  'insert',
-  'heatpump',
   'bioethanol',
   'electricfire',
-  'flue',
-  'accessory',
 ] as const;
 
 /**
@@ -73,14 +56,7 @@ export type HeatDistribution = 'air' | 'hydro';
  * électrique, capacité du brûleur, autonomie, dimensions) vivent donc dans
  * `specs`, en texte libre, exactement telles que le fabricant les annonce.
  */
-export const applianceCategories = [
-  'pellet',
-  'wood',
-  'cookstove',
-  'boiler',
-  'insert',
-  'heatpump',
-] as const satisfies readonly ProductCategory[];
+export const applianceCategories = ['pellet'] as const satisfies readonly ProductCategory[];
 
 export function isAppliance(category: ProductCategory): boolean {
   return (applianceCategories as readonly ProductCategory[]).includes(category);

@@ -20,7 +20,7 @@ const CLIENT = {
 const PANIER = {
   locale: 'fr' as const,
   shippingCountry: 'FR',
-  lines: [{ productId: 'aria-6', variantId: 'noir', quantity: 1 }],
+  lines: [{ productId: 'elec-vicco-lynea', variantId: 'blanc', quantity: 1 }],
   customer: CLIENT,
   transferHolder: null,
 };
@@ -39,7 +39,7 @@ describe('formulaire de commande', () => {
      */
     const parsed = checkoutInputSchema.parse({
       ...PANIER,
-      lines: [{ productId: 'aria-6', variantId: 'noir', quantity: 1, unitPrice: 1 }],
+      lines: [{ productId: 'elec-vicco-lynea', variantId: 'blanc', quantity: 1, unitPrice: 1 }],
     });
     expect(parsed.lines[0]).not.toHaveProperty('unitPrice');
   });
@@ -75,7 +75,7 @@ describe('formulaire de commande', () => {
 describe('cycle de vie en paiement par virement', () => {
   function commande() {
     const cart = priceCart({
-      lines: [{ productId: 'aria-6', variantId: 'noir', quantity: 1 }],
+      lines: [{ productId: 'elec-vicco-lynea', variantId: 'blanc', quantity: 1 }],
       shippingCountry: 'FR',
       locale: 'fr',
     });
@@ -200,7 +200,7 @@ describe('accès au back-office', () => {
 describe('déclaration du virement par le client', () => {
   function commande() {
     const cart = priceCart({
-      lines: [{ productId: 'aria-6', variantId: 'noir', quantity: 1 }],
+      lines: [{ productId: 'elec-vicco-lynea', variantId: 'blanc', quantity: 1 }],
       shippingCountry: 'FR',
       locale: 'fr',
     });

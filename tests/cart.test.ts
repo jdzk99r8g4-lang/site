@@ -10,10 +10,26 @@ interface Line {
   quantity: number;
 }
 
-/** Panier minimal valide : un accessoire sans variante, donc sans choix requis. */
-const accessory: Line = { productId: 'aspirateur-cendres', variantId: null, quantity: 1 };
-/** Un poêle : palettisé, avec variantes obligatoires. */
-const stove: Line = { productId: 'aria-6', variantId: 'noir', quantity: 1 };
+/*
+ * Les deux produits de référence des tests.
+ *
+ * Ils sont choisis pour ce qu'ils FONT au calcul, pas pour ce qu'ils sont :
+ *   — `light` est léger et part en colis, sans variante : c'est le panier
+ *     minimal valide, celui qui n'exige aucun choix ;
+ *   — `stove` pèse 140 kg et part en messagerie palettisée : il déclenche le
+ *     tarif palette et le cumul des poids ;
+ *   — `variante` est la seule fiche du catalogue à porter des variantes, et
+ *     elle les porte pour une raison vérifiable : la place de marché vend ses
+ *     deux finitions à deux prix, d'où un écart de 50 € relevé et non inventé.
+ *     C'est elle qui éprouve l'exigence de choix et le surcoût.
+ *
+ * Si l'un disparaît du catalogue, ces tests échouent bruyamment — ce qui vaut
+ * mieux qu'un identifiant inventé qui les ferait passer sans rien vérifier.
+ */
+const light: Line = { productId: 'bio-etna-table', variantId: null, quantity: 1 };
+const stove: Line = { productId: 'anna-12', variantId: null, quantity: 1 };
+/** La seule fiche à variantes : blanc à 0, noir à +50 €. */
+const variante: Line = { productId: 'elec-vicco-lynea', variantId: 'blanc', quantity: 1 };
 
 function cart(lines: Line[], country = 'FR', rateId?: string) {
   return priceCart({
@@ -29,7 +45,7 @@ describe('validation de l’entrée', () => {
     // Le point de sécurité central : si un prix pouvait être envoyé, il
     // suffirait de le modifier dans la console pour payer un centime.
     const parsed = cartInputSchema.parse({
-      lines: [{ productId: 'aria-6', variantId: 'noir', quantity: 1, price: 1 }],
+      lines: [{ productId: 'elec-vicco-lynea', variantId: 'noir', quantity: 1, price: 1 }],
       shippingCountry: 'fr',
     });
     expect(parsed).not.toHaveProperty('lines.0.price');
@@ -37,46 +53,46 @@ describe('validation de l’entrée', () => {
   });
 
   it('met le pays en majuscules et applique les valeurs par défaut', () => {
-    const parsed = cartInputSchema.parse({ lines: [accessory] });
+    const parsed = cartInputSchema.parse({ lines: [light] });
     expect(parsed.shippingCountry).toBe('FR');
     expect(parsed.locale).toBe('fr');
   });
 
   it('refuse une quantité hors bornes ou non entière', () => {
-    expect(() => cartInputSchema.parse({ lines: [{ ...accessory, quantity: 0 }] })).toThrow();
-    expect(() => cartInputSchema.parse({ lines: [{ ...accessory, quantity: 1.5 }] })).toThrow();
+    expect(() => cartInputSchema.parse({ lines: [{ ...light, quantity: 0 }] })).toThrow();
+    expect(() => cartInputSchema.parse({ lines: [{ ...light, quantity: 1.5 }] })).toThrow();
     expect(() =>
-      cartInputSchema.parse({ lines: [{ ...accessory, quantity: MAX_QUANTITY_PER_LINE + 1 }] }),
+      cartInputSchema.parse({ lines: [{ ...light, quantity: MAX_QUANTITY_PER_LINE + 1 }] }),
     ).toThrow();
   });
 
   it('refuse une langue inconnue', () => {
-    expect(() => cartInputSchema.parse({ lines: [accessory], locale: 'de' })).toThrow();
+    expect(() => cartInputSchema.parse({ lines: [light], locale: 'de' })).toThrow();
   });
 });
 
 describe('tarification du panier', () => {
   it('relit les prix dans le catalogue', () => {
-    const priced = cart([stove]);
-    const product = getProductById('aria-6');
+    const priced = cart([variante]);
+    const product = getProductById('elec-vicco-lynea');
     expect(product).toBeDefined();
-    expect(priced.lines[0]?.unitPrice).toBe(unitPrice(product!, 'noir'));
+    expect(priced.lines[0]?.unitPrice).toBe(unitPrice(product!, 'blanc'));
   });
 
   it('applique le surcoût de la variante choisie', () => {
-    const base = cart([{ ...stove, variantId: 'noir' }]);
-    const premium = cart([{ ...stove, variantId: 'bordeaux' }]);
+    const base = cart([{ ...variante, variantId: 'blanc' }]);
+    const premium = cart([{ ...variante, variantId: 'noir' }]);
     expect(premium.subtotal).toBeGreaterThan(base.subtotal);
   });
 
   it('exige un choix de variante quand le produit en a', () => {
     // Sans cela, le prix affiché et le prix facturé pourraient différer.
-    expect(() => cart([{ productId: 'aria-6', variantId: null, quantity: 1 }])).toThrow(CartError);
+    expect(() => cart([{ productId: 'elec-vicco-lynea', variantId: null, quantity: 1 }])).toThrow(CartError);
   });
 
   it('refuse un produit ou une variante inconnus', () => {
     expect(() => cart([{ productId: 'inconnu', variantId: null, quantity: 1 }])).toThrow(CartError);
-    expect(() => cart([{ productId: 'aria-6', variantId: 'rose-fluo', quantity: 1 }])).toThrow(CartError);
+    expect(() => cart([{ productId: 'elec-vicco-lynea', variantId: 'rose-fluo', quantity: 1 }])).toThrow(CartError);
   });
 
   it('refuse un panier vide', () => {
@@ -85,8 +101,8 @@ describe('tarification du panier', () => {
 
   it('fusionne les lignes en doublon sans dépasser le plafond', () => {
     const priced = cart([
-      { ...accessory, quantity: 3 },
-      { ...accessory, quantity: 4 },
+      { ...light, quantity: 3 },
+      { ...light, quantity: 4 },
     ]);
     expect(priced.lines).toHaveLength(1);
     expect(priced.lines[0]?.quantity).toBe(MAX_QUANTITY_PER_LINE);
@@ -94,8 +110,8 @@ describe('tarification du panier', () => {
 
   it('ne fusionne pas deux variantes différentes du même produit', () => {
     const priced = cart([
-      { ...stove, variantId: 'noir' },
-      { ...stove, variantId: 'ivoire' },
+      { ...variante, variantId: 'blanc' },
+      { ...variante, variantId: 'noir' },
     ]);
     expect(priced.lines).toHaveLength(2);
   });
@@ -117,7 +133,7 @@ describe('tarification du panier', () => {
   });
 
   it('retient le délai d’expédition le plus long du panier', () => {
-    const priced = cart([stove, { ...accessory }]);
+    const priced = cart([stove, { ...light }]);
     const slowest = Math.max(
       ...priced.lines.map((line) => line.product.dispatchDaysMax),
     );
@@ -125,7 +141,7 @@ describe('tarification du panier', () => {
   });
 
   it('conserve la langue du parcours', () => {
-    const priced = priceCart({ lines: [accessory], shippingCountry: 'NL', locale: 'nl' });
+    const priced = priceCart({ lines: [light], shippingCountry: 'NL', locale: 'nl' });
     expect(priced.locale).toBe('nl');
     expect(priced.shipping.label.nl.length).toBeGreaterThan(0);
   });
@@ -133,13 +149,13 @@ describe('tarification du panier', () => {
 
 describe('profil de transport', () => {
   it('bascule en palette dès qu’un appareil est au panier', () => {
-    expect(cart([accessory]).profile.freight).toBe(false);
+    expect(cart([light]).profile.freight).toBe(false);
     expect(cart([stove]).profile.freight).toBe(true);
-    expect(cart([accessory, stove]).profile.freight).toBe(true);
+    expect(cart([light, stove]).profile.freight).toBe(true);
   });
 
   it('additionne les poids pour chaque unité', () => {
-    const product = getProductById('aspirateur-cendres');
+    const product = getProductById('bio-etna-table');
     expect(product).toBeDefined();
     const profile = profileFor([{ product: product!, quantity: 3 }]);
     expect(profile.weightGrams).toBe(product!.weightGrams * 3);
@@ -148,9 +164,24 @@ describe('profil de transport', () => {
 
 describe('frais de port', () => {
   it('facture le port palette sous le seuil de franco', () => {
-    const priced = cart([stove]);
-    expect(priced.shipping.freight).toBe(true);
-    expect(priced.shipping.price).toBeGreaterThan(0);
+    /*
+     * Le sous-total est posé ici, et non pris dans le catalogue.
+     *
+     * La règle du franco porte sur un couple (sous-total, zone), pas sur un
+     * produit : la tester à travers un article du catalogue la rendait
+     * dépendante d'un prix qui bouge. Et le piège s'est refermé — le seul
+     * produit palettisé restant coûte 2 490 €, soit EXACTEMENT le seuil
+     * français, donc le port tombait à zéro et le test échouait sur une
+     * coïncidence.
+     */
+    const profile = { freight: true, weightGrams: 140_000 };
+    const seuil = freeShippingThreshold('FR', profile);
+    const tarifs = ratesFor(seuil - euros(1), zoneForCountry('FR'), profile);
+    expect(tarifs.every((t) => t.freight)).toBe(true);
+    expect(Math.min(...tarifs.map((t) => t.price))).toBeGreaterThan(0);
+
+    // Et le panier réel part bien en palette.
+    expect(cart([stove]).shipping.freight).toBe(true);
   });
 
   it('offre le port au-delà du seuil', () => {
@@ -264,7 +295,7 @@ describe('ce qu’un ajout produit réellement', () => {
     // Si les deux divergent, le client voit une quantité que le serveur
     // refuse, et la commande échoue au dernier écran.
     const cart = priceCart({
-      lines: [{ productId: 'aria-6', variantId: 'noir', quantity: MAX_QUANTITY_PER_LINE }],
+      lines: [{ productId: 'elec-vicco-lynea', variantId: 'noir', quantity: MAX_QUANTITY_PER_LINE }],
       shippingCountry: 'FR',
       locale: 'fr',
     });

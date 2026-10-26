@@ -23,6 +23,10 @@ const FORBIDDEN_IN_CLIENT = [
   'lib/admin',
   'lib/store',
   'lib/email',
+  // Les adresses du CDN fournisseur. Pas un secret, mais les sérialiser dans
+  // le HTML rendrait chaque fiche produit cliquable vers un autre site : la
+  // boutique cesserait d'être la seule source visible de ce qu'elle vend.
+  'lib/media-remote-sources',
 ];
 
 function walk(dir: string): string[] {

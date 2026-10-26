@@ -17,7 +17,8 @@
     "placeholders": "python3 scripts/generate-placeholders.py",
     "redis:check": "tsx scripts/check-redis.ts",
     "media:fetch": "tsx scripts/fetch-media.ts",
-    "media:probe": "tsx scripts/probe-media.ts"
+    "media:probe": "tsx scripts/probe-media.ts",
+    "media:remote": "tsx scripts/scan-remote-media.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
