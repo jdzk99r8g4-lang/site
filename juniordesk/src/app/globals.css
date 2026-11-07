@@ -1,0 +1,199 @@
+@import 'tailwindcss';
+
+/*
+ * Jetons de design — reprise du brouillon junior-desk.vercel.app.
+ *
+ * Thème sombre verdâtre, accent vert pour les éléments de marque et les
+ * badges, orange pour l'appel à l'action principal. Les trois familles de
+ * contrat ont chacune leur couleur, et c'est structurant : vert pour le
+ * stage, bleu pour l'alternance, ambre pour le poste junior. Un candidat
+ * balaie une liste de vingt offres et doit distinguer les types au coup d'œil,
+ * sans lire.
+ *
+ * Les valeurs sont celles du brouillon, reprises telles quelles pour que les
+ * deux versions soient visuellement interchangeables.
+ */
+@theme {
+  --color-bg: #0a0e0b;
+  --color-bg-header: #16261c;
+  --color-bg-hero: #0f1a13;
+  --color-card: #131c15;
+  --color-card-hover: #182219;
+  --color-line: #223028;
+  --color-line-hover: #35493e;
+  --color-ink: #edf1ee;
+  --color-muted: #8fa196;
+  --color-muted-2: #647069;
+
+  --color-accent: #6fcf97;
+  --color-accent-strong: #4fd18a;
+  --color-accent-bg: #1c3326;
+
+  --color-blue: #7fb8e8;
+  --color-blue-bg: #1c2c38;
+  --color-amber: #e8b45f;
+  --color-amber-bg: #362b18;
+  --color-warn: #d98a5f;
+  --color-warn-bg: #3a2620;
+
+  --color-cta: #e8871e;
+  --color-cta-hover: #ff9c33;
+  --color-cta-ink: #1a1005;
+
+  --font-sans: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-card: 14px;
+
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+/* Barres de défilement assorties au thème, sur les deux moteurs. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-hover) var(--color-bg-hero);
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-hero);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-hover);
+  border-radius: 10px;
+  border: 2px solid var(--color-bg-hero);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-2);
+}
+
+/*
+ * Cases à cocher personnalisées : rondes, sombres, verrouillées en gris plein
+ * une fois cochées. Reprises du brouillon.
+ */
+input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--color-line);
+  cursor: pointer;
+  position: relative;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+input[type='checkbox']:hover {
+  border-color: var(--color-line-hover);
+}
+input[type='checkbox']:checked {
+  background: var(--color-muted-2);
+  border-color: var(--color-muted-2);
+}
+input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  transform: translate(-50%, -50%);
+}
+
+/* Visible au clavier uniquement. Indispensable, et souvent supprimé par erreur. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Champs de saisie : fond plus sombre que la carte, halo vert au focus. */
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='date'],
+select {
+  background: #0f1712;
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+input[type='text']:focus,
+input[type='search']:focus,
+input[type='email']:focus,
+input[type='date']:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-bg);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card-enter {
+  animation: fadeInUp 0.35s ease both;
+}
+
+/* Respecte le réglage système de réduction des animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
