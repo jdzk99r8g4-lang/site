@@ -213,6 +213,79 @@ export function accountExistsMail(input: { loginUrl: string }): {
   return { subject, text, html };
 }
 
+export function passwordResetMail(input: { resetUrl: string }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Réinitialiser votre mot de passe ${brand.name}`;
+
+  const text = [
+    'Vous avez demandé à réinitialiser votre mot de passe.',
+    '',
+    'Ouvrez ce lien pour en choisir un nouveau :',
+    input.resetUrl,
+    '',
+    'Ce lien expire dans une heure et ne fonctionne qu’une seule fois.',
+    '',
+    'Si vous n’êtes pas à l’origine de cette demande, ignorez ce message :',
+    'votre mot de passe actuel reste valable et rien n’a été modifié.',
+    '',
+    brand.name,
+  ].join('\n');
+
+  const html = layout(
+    `<h1>Réinitialiser votre mot de passe</h1>
+     <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
+     <p><a class="btn" href="${escapeAttr(input.resetUrl)}">Choisir un nouveau mot de passe</a></p>
+     <p class="muted">Ce lien expire dans une heure et ne fonctionne qu’une seule fois.</p>
+     <hr />
+     <p class="muted">Si vous n’êtes pas à l’origine de cette demande, ignorez ce message :
+        votre mot de passe actuel reste valable et rien n’a été modifié.</p>`,
+  );
+
+  return { subject, text, html };
+}
+
+/**
+ * Message envoyé lorsqu'une demande de réinitialisation vise une adresse sans
+ * compte.
+ *
+ * Il permet de répondre exactement la même chose à l'écran dans les deux cas,
+ * sans transformer le formulaire en annuaire — et il est réellement utile à
+ * quelqu'un qui s'est trompé d'adresse en s'inscrivant.
+ */
+export function resetNoAccountMail(input: { signUpUrl: string }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Aucun compte ${brand.name} à cette adresse`;
+
+  const text = [
+    `Quelqu’un a demandé à réinitialiser un mot de passe ${brand.name} pour cette adresse.`,
+    '',
+    'Aucun compte n’y est associé. Vous avez peut-être utilisé une autre adresse,',
+    'ou vous n’avez pas encore de compte :',
+    input.signUpUrl,
+    '',
+    'Si ce n’était pas vous, il n’y a rien à faire.',
+    '',
+    brand.name,
+  ].join('\n');
+
+  const html = layout(
+    `<h1>Aucun compte à cette adresse</h1>
+     <p>Quelqu’un a demandé à réinitialiser un mot de passe ${escapeHtml(brand.name)} pour
+        cette adresse. Aucun compte n’y est associé.</p>
+     <p>Vous avez peut-être utilisé une autre adresse, ou vous n’avez pas encore de compte.</p>
+     <p><a class="btn" href="${escapeAttr(input.signUpUrl)}">Créer un compte</a></p>
+     <p class="muted">Si ce n’était pas vous, il n’y a rien à faire.</p>`,
+  );
+
+  return { subject, text, html };
+}
+
 function layout(body: string): string {
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />

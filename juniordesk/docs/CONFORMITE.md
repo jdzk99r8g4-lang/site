@@ -179,12 +179,34 @@ Déclenchable par la personne elle-même depuis son espace, derrière une case �
 cocher. Elle efface le compte, ses sessions, ses offres enregistrées, ses
 candidatures notées et l'alerte e-mail associée. Rien n'est conservé.
 
-### Ce qui manque
+### Réinitialisation du mot de passe
 
-La **réinitialisation de mot de passe** n'est pas implémentée. La page de
-connexion l'indique et propose d'écrire pour faire supprimer le compte. À
-traiter avant d'ouvrir le site largement : sans elle, toute personne qui oublie
-son mot de passe perd ses offres enregistrées.
+Lien envoyé par e-mail, valable **une heure** et utilisable **une seule fois**.
+
+L'usage unique est obtenu sans rien stocker : le jeton porte l'empreinte du mot
+de passe courant, et l'empreinte change au moment du changement. Un lien
+retrouvé dans une boîte mail des mois plus tard ne rouvre donc rien.
+
+Le lien est construit à partir de `NEXT_PUBLIC_SITE_URL` et jamais de l'en-tête
+`Host` de la requête. C'est important : un lien bâti sur un en-tête que
+l'appelant contrôle peut être redirigé vers un domaine qu'il possède, et le
+jeton lui arrive alors directement.
+
+Au changement, **toutes les sessions sont révoquées**, y compris sur les autres
+appareils. C'est le point de l'opération : si quelqu'un d'autre avait accès au
+compte, c'est le moment où il en est éjecté. La personne n'est pas connectée
+automatiquement dans la foulée — si le lien avait été intercepté, cela donnerait
+l'accès sans rien demander de plus.
+
+Le compte est marqué vérifié au passage : avoir cliqué un lien reçu à cette
+adresse prouve qu'on y a accès, ce qui est exactement ce que la confirmation
+d'inscription demandait.
+
+Trois demandes par heure et par compte. Et, comme pour l'inscription, la
+réponse à l'écran est identique que l'adresse corresponde à un compte ou non :
+dans le cas contraire, un e-mail part quand même vers elle pour le dire, ce qui
+aide qui s'est trompé d'adresse sans rien révéler à qui n'a pas accès à la
+boîte.
 
 ---
 

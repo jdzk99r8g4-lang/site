@@ -35,6 +35,7 @@ export default async function LoginPage({
   };
   const error = ERRORS[code];
   const verified = params['verifie'] === '1';
+  const passwordChanged = params['motdepasse'] === 'change';
 
   return (
     <main className="mx-auto max-w-xl px-5 py-10 sm:px-6">
@@ -43,6 +44,13 @@ export default async function LoginPage({
       {verified ? (
         <p role="status" className="mt-6 rounded-card border border-accent/40 bg-accent-bg p-4 text-sm">
           Adresse confirmée. Vous pouvez maintenant vous connecter.
+        </p>
+      ) : null}
+
+      {passwordChanged ? (
+        <p role="status" className="mt-6 rounded-card border border-accent/40 bg-accent-bg p-4 text-sm">
+          Mot de passe changé. Toutes vos autres sessions ont été fermées. Connectez-vous avec
+          votre nouveau mot de passe.
         </p>
       ) : null}
 
@@ -96,14 +104,10 @@ export default async function LoginPage({
         </Link>
       </p>
 
-      {/*
-       * Pas de « mot de passe oublié » tant que la fonction n'existe pas.
-       * Un lien qui ne mène nulle part coûte plus de confiance qu'il n'en
-       * rapporte ; la limite est dite franchement.
-       */}
-      <p className="mt-3 text-[13px] text-muted-2">
-        La réinitialisation de mot de passe n’est pas encore en place. En attendant, écrivez-nous
-        et nous supprimerons le compte pour que vous puissiez le recréer.
+      <p className="mt-3 text-sm text-muted">
+        <Link href="/mot-de-passe-oublie" className="text-accent">
+          Mot de passe oublié ?
+        </Link>
       </p>
     </main>
   );

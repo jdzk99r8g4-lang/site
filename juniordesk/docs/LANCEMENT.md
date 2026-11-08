@@ -53,18 +53,27 @@ Sans elle, rien ne doit être publié.
 - [ ] `CRON_SECRET` et `ALERTS_SECRET` générés (chaînes aléatoires longues).
       `ALERTS_SECRET` ne devra plus jamais changer : il signe les liens en
       circulation et dérive les identifiants de compte à partir des adresses
-- [ ] Domaine vérifié chez Resend, `RESEND_API_KEY` et `EMAIL_FROM` renseignés
-      — sans quoi les alertes partent en spam
+- [ ] Domaine vérifié chez Resend. Resend n'envoie pas depuis un domaine
+      partagé : il faut en posséder un et le vérifier. Sa documentation
+      recommande un sous-domaine (`alertes.juniordesk.fr`) pour isoler la
+      réputation d'envoi des e-mails transactionnels
+- [ ] Enregistrements DNS posés : MX et TXT SPF sur le nom `send`, plus le TXT
+      DKIM, tels que Resend les affiche
+- [ ] `RESEND_API_KEY` et `EMAIL_FROM` renseignés, l'adresse d'expédition
+      appartenant au domaine vérifié — sinon les messages sont refusés ou
+      partent en indésirables
+- [ ] Un e-mail de test réellement reçu dans une vraie boîte, pas seulement
+      accepté par l'API
 - [ ] Tâche planifiée vérifiée dans l'interface Vercel : `/api/cron/collect`,
       à 02h40 UTC
 
 ## 5 bis. Avant d'ouvrir les comptes largement
 
-- [ ] Implémenter la réinitialisation de mot de passe. Sans elle, un oubli
-      signifie la perte du compte et des offres enregistrées, et la seule
-      issue est une suppression manuelle
 - [ ] Vérifier que Redis est bien branché : sans lui, les comptes ne survivent
       ni au redémarrage ni au passage d'un processus à l'autre
+- [ ] Vérifier que `NEXT_PUBLIC_SITE_URL` porte l'URL publique réelle : c'est
+      elle qui construit les liens des e-mails, y compris ceux de
+      réinitialisation de mot de passe
 
 ## 6. Vérifications finales
 
@@ -74,6 +83,9 @@ Sans elle, rien ne doit être publié.
 - [ ] Parcours de compte déroulé de bout en bout : création, e-mail de
       vérification reçu, confirmation, connexion, mise de côté d'une offre,
       déconnexion, reconnexion, suppression du compte
+- [ ] Parcours de mot de passe oublié : lien reçu, nouveau mot de passe
+      accepté, ancien refusé, lien inutilisable une seconde fois, et sessions
+      des autres appareils bien fermées
 - [ ] Vérifier que la connexion fonctionne de façon répétée : si elle échoue
       une fois sur deux, c'est que Redis n'est pas branché et que chaque
       processus a sa propre mémoire

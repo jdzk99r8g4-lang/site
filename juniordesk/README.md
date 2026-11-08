@@ -64,12 +64,31 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 114 tests unitaires |
+| `npm test` | 130 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
 
 ---
+
+## Faire arriver les e-mails
+
+Sans `RESEND_API_KEY`, aucun e-mail ne part : les messages sont écrits dans la
+console en développement, et refusés bruyamment en production. Pour que les
+alertes et les liens de compte arrivent réellement :
+
+1. Créer un compte sur Resend et une clé API.
+2. **Vérifier un domaine qu'on possède.** Resend n'envoie pas depuis un domaine
+   partagé ou public : il faut ajouter et vérifier au moins un domaine. Sa
+   documentation recommande un sous-domaine (`alertes.juniordesk.fr`) plutôt que
+   le domaine racine, pour isoler la réputation d'envoi.
+3. Poser les enregistrements DNS que Resend affiche : un MX et un TXT SPF
+   (`v=spf1 include:amazonses.com ~all`) sur le nom `send`, plus le TXT DKIM.
+4. `RESEND_API_KEY` et `EMAIL_FROM` (une adresse **de ce domaine vérifié**).
+5. `NEXT_PUBLIC_SITE_URL` sur l'URL publique réelle : c'est elle qui construit
+   les liens contenus dans les e-mails.
+
+Sans domaine vérifié, les messages partent en indésirables ou sont refusés.
 
 ## Obtenir les vraies offres
 
@@ -179,10 +198,15 @@ Ce qui est en place :
   hachage est calculé même quand le compte n'existe pas, pour que le temps de
   réponse ne le trahisse pas non plus ;
 - dix tentatives de connexion par quart d'heure et par compte ;
+- **réinitialisation de mot de passe** par lien d'une heure, à usage unique,
+  qui révoque toutes les sessions ouvertes ;
 - suppression du compte immédiate et complète, depuis l'espace personnel.
 
-Ce qui n'y est pas encore : la **réinitialisation de mot de passe**. La page de
-connexion le dit plutôt que d'afficher un lien mort.
+Le lien de réinitialisation ne sert qu'une fois sans qu'on ait à stocker quoi
+que ce soit : il porte l'empreinte du mot de passe courant, qui change au
+moment du changement. Et il est construit depuis `NEXT_PUBLIC_SITE_URL`, jamais
+depuis l'en-tête `Host` de la requête — un lien de réinitialisation bâti sur un
+en-tête que l'appelant contrôle se détourne vers le domaine de son choix.
 
 **Les comptes rendent Redis obligatoire.** Sans lui, le magasin est en mémoire,
 donc ni partagé entre processus ni conservé au redémarrage : une personne peut

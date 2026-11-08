@@ -19,7 +19,7 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-export type TokenPurpose = 'confirm' | 'unsubscribe' | 'click';
+export type TokenPurpose = 'confirm' | 'unsubscribe' | 'click' | 'reset';
 
 /** 30 jours : un lien de confirmation oublié dans une boîte mail doit périmer. */
 const DEFAULT_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -106,4 +106,16 @@ export function readToken(token: string, expected: TokenPurpose): TokenResult {
  */
 export function subscriptionId(email: string): string {
   return createHmac('sha256', secret()).update(email.trim().toLowerCase()).digest('hex').slice(0, 24);
+}
+
+/**
+ * Empreinte courte et non réversible d'une valeur, avec le secret du site.
+ *
+ * Sert à rendre un lien de réinitialisation utilisable UNE SEULE FOIS sans
+ * rien stocker : on y inscrit l'empreinte du mot de passe actuel. Dès que le
+ * mot de passe change, l'empreinte change, et tous les liens émis avant
+ * cessent de correspondre — y compris celui qui vient de servir.
+ */
+export function fingerprint(value: string): string {
+  return createHmac('sha256', secret()).update(value).digest('hex').slice(0, 16);
 }

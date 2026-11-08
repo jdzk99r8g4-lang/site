@@ -20,9 +20,14 @@ import { cookies } from 'next/headers';
 import { brand } from './brand';
 import { getStore } from './store';
 import { SESSION_TTL_SECONDS, type Account } from './store/types';
-import { createToken, readToken, subscriptionId } from './tokens';
+import { createToken, fingerprint, readToken, subscriptionId } from './tokens';
 import { sendMail } from './email/send';
-import { accountVerificationMail, accountExistsMail } from './email/templates';
+import {
+  accountVerificationMail,
+  accountExistsMail,
+  passwordResetMail,
+  resetNoAccountMail,
+} from './email/templates';
 
 const scrypt = promisify(scryptCallback) as (
   password: string,
@@ -412,4 +417,171 @@ export async function deleteOwnAccount(): Promise<boolean> {
  */
 export function accountId(email: string): string {
   return subscriptionId(email);
+}
+
+/* --------------------------------------------------------------------------
+ * Réinitialisation du mot de passe
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Durée de vie d'un lien de réinitialisation : une heure.
+ *
+ * Bien plus court que les trente jours d'un lien de confirmation, et pour une
+ * raison précise : ce lien donne accès au compte. Une boîte mail consultée sur
+ * un ordinateur partagé, un e-mail transféré par inadvertance, et un lien qui
+ * traîne un mois devient une clé laissée sur la porte.
+ */
+const RESET_TTL_SECONDS = 60 * 60;
+
+/** Trois demandes par heure et par compte : au-delà, c'est du harcèlement de boîte mail. */
+const MAX_RESET_REQUESTS = 3;
+const RESET_WINDOW_SECONDS = 60 * 60;
+
+export type ResetRequestResult =
+  | { ok: true; simulated: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Envoie un lien de réinitialisation.
+ *
+ * Comme pour l'inscription, la réponse est la MÊME que l'adresse corresponde
+ * à un compte ou non. Sinon, ce formulaire devient un moyen de savoir qui est
+ * inscrit ici. Quand l'adresse est inconnue, un e-mail part quand même vers
+ * elle, pour dire qu'aucun compte n'y est associé : c'est utile à quelqu'un
+ * qui s'est trompé d'adresse à l'inscription, et cela ne révèle rien à qui
+ * n'a pas accès à la boîte.
+ */
+export async function requestPasswordReset(email: string): Promise<ResetRequestResult> {
+  const normalized = email.trim().toLowerCase();
+  if (!isPlausibleEmail(normalized)) {
+    return { ok: false, error: 'Cette adresse e-mail ne semble pas valide.' };
+  }
+
+  const store = getStore();
+  const id = accountId(normalized);
+
+  const attempts = await store.touchRateLimit(`reset:${id}`, RESET_WINDOW_SECONDS);
+  if (attempts > MAX_RESET_REQUESTS) {
+    // Message volontairement identique au cas nominal : révéler qu'une limite
+    // a été atteinte révélerait que le compte existe.
+    return { ok: true, simulated: false };
+  }
+
+  const account = await store.getAccount(id);
+
+  if (!account) {
+    const mail = resetNoAccountMail({ signUpUrl: `${brand.url}/inscription` });
+    const sent = await sendMail({ to: normalized, ...mail });
+    return sent.ok ? { ok: true, simulated: sent.simulated } : { ok: true, simulated: false };
+  }
+
+  // L'empreinte du mot de passe actuel est inscrite dans le jeton : elle rend
+  // le lien inutilisable dès que le mot de passe a changé, donc une seule fois.
+  const subject = `${account.id}:${fingerprint(account.passwordHash)}`;
+  const token = createToken(subject, 'reset', RESET_TTL_SECONDS);
+
+  const mail = passwordResetMail({
+    resetUrl: `${brand.url}/mot-de-passe/reinitialisation?jeton=${encodeURIComponent(token)}`,
+  });
+  const sent = await sendMail({ to: normalized, ...mail });
+
+  return sent.ok ? { ok: true, simulated: sent.simulated } : { ok: true, simulated: false };
+}
+
+/**
+ * `reason` distingue « le lien n'est plus bon » de « le mot de passe est
+ * refusé », parce que les deux appellent des suites différentes : demander un
+ * nouveau lien, ou simplement ressaisir. On ne devine pas le cas en cherchant
+ * des mots dans le message — le texte « ce lien a déjà servi, ou le mot de
+ * passe a changé » contient « mot de passe », et un filtrage par sous-chaîne
+ * renvoyait les gens au mauvais endroit.
+ */
+export type ResetFailureReason = 'lien' | 'motdepasse';
+
+export type ResetResult =
+  | { ok: true }
+  | { ok: false; reason: ResetFailureReason; error: string };
+
+/**
+ * Vérifie un jeton de réinitialisation sans rien changer.
+ *
+ * Permet à la page de n'afficher le formulaire que si le lien est encore bon,
+ * plutôt que de faire saisir deux fois un mot de passe pour annoncer ensuite
+ * que le lien avait expiré.
+ */
+export async function checkResetToken(token: string): Promise<ResetResult> {
+  const read = readToken(token, 'reset');
+  if (!read.ok) {
+    return {
+      ok: false,
+      reason: 'lien',
+      error:
+        read.reason === 'expire'
+          ? 'Ce lien a expiré. Les liens de réinitialisation ne durent qu’une heure, par sécurité. Demandez-en un nouveau.'
+          : 'Ce lien n’est pas valide. Vérifiez qu’il a été copié en entier.',
+    };
+  }
+
+  const [id, mark] = read.subject.split(':');
+  if (!id || !mark) {
+    return { ok: false, reason: 'lien', error: 'Ce lien n’est pas valide.' };
+  }
+
+  const account = await getStore().getAccount(id);
+  if (!account) {
+    return { ok: false, reason: 'lien', error: 'Ce compte n’existe plus.' };
+  }
+
+  if (fingerprint(account.passwordHash) !== mark) {
+    return {
+      ok: false,
+      reason: 'lien',
+      error:
+        'Ce lien a déjà servi, ou le mot de passe a changé depuis son envoi. ' +
+        'Demandez-en un nouveau.',
+    };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Change le mot de passe à partir d'un lien valide.
+ *
+ * Trois effets au-delà du changement lui-même :
+ *
+ *  - toutes les sessions sont révoquées. Si quelqu'un d'autre était connecté
+ *    au compte, c'est précisément le moment où il doit être éjecté ;
+ *  - le compte est marqué vérifié. Avoir cliqué un lien reçu à cette adresse
+ *    prouve qu'on y a accès, ce qui est exactement ce que la vérification
+ *    demandait ;
+ *  - le compteur de tentatives de connexion est laissé tel quel, mais le lien
+ *    devient inutilisable, son empreinte ne correspondant plus.
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<ResetResult> {
+  const valid = await checkResetToken(token);
+  if (!valid.ok) return valid;
+
+  const problem = passwordProblem(newPassword);
+  if (problem) return { ok: false, reason: 'motdepasse', error: problem };
+
+  const read = readToken(token, 'reset');
+  if (!read.ok) return { ok: false, reason: 'lien', error: 'Ce lien n’est pas valide.' };
+
+  const [id] = read.subject.split(':');
+  if (!id) return { ok: false, reason: 'lien', error: 'Ce lien n’est pas valide.' };
+
+  const store = getStore();
+  const account = await store.getAccount(id);
+  if (!account) return { ok: false, reason: 'lien', error: 'Ce compte n’existe plus.' };
+
+  account.passwordHash = await hashPassword(newPassword);
+  if (!account.verified) {
+    account.verified = true;
+    account.verifiedAt = new Date().toISOString();
+  }
+  await store.saveAccount(account);
+  await store.deleteSessionsOf(account.id);
+
+  return { ok: true };
 }
