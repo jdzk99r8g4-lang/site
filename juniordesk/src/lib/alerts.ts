@@ -20,6 +20,7 @@ import type { AlertSubscription } from './store/types';
 import { createToken, readToken, subscriptionId } from './tokens';
 import { sendMail } from './email/send';
 import { isPlausibleEmail } from './email-address';
+import { allowSend } from './send-limit';
 import { confirmationMail, digestMail } from './email/templates';
 import { allFamilySlugs, familyBySlug } from './taxonomy';
 
@@ -41,6 +42,16 @@ export async function subscribe(input: SubscribeInput): Promise<SubscribeResult>
   const email = input.email.trim().toLowerCase();
   if (!isPlausibleEmail(email)) {
     return { ok: false, error: 'Cette adresse e-mail ne semble pas valide.' };
+  }
+
+  /*
+   * Même raison qu'à l'inscription : sans limite, ce formulaire sert à
+   * inonder la boîte d'un tiers. Le refus est silencieux et rend le message
+   * habituel.
+   */
+  const allowance = await allowSend('alerte', email);
+  if (!allowance.allowed) {
+    return { ok: true, alreadyConfirmed: false, simulated: false };
   }
 
   const families = sanitizeFamilies(input.families);

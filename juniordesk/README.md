@@ -64,7 +64,7 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 175 tests unitaires |
+| `npm test` | 186 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
@@ -180,6 +180,7 @@ Tout est dans `.env.example`, commenté ligne par ligne.
 | `CRON_SECRET` | Protège la collecte planifiée | **en production** |
 | `ALERTS_SECRET` | Signe les liens d'alerte et de compte | **en production** |
 | `GOOGLE_CLIENT_ID` / `_SECRET` | Bouton « Continuer avec Google » | facultatif |
+| `EMAIL_HOURLY_CAP` | Plafond horaire d'e-mails déclenchés par un visiteur (200) | facultatif |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Envoi des alertes | pour notifier |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | `true` le jour du lancement seulement | — |
 
@@ -211,6 +212,10 @@ Ce qui est en place :
   hachage est calculé même quand le compte n'existe pas, pour que le temps de
   réponse ne le trahisse pas non plus ;
 - dix tentatives de connexion par quart d'heure et par compte ;
+- **trois e-mails par heure et par adresse**, plus un plafond horaire global,
+  sur les trois formulaires qui font partir un message vers une adresse
+  choisie par l'appelant — sans quoi ils servent à inonder la boîte d'un
+  tiers et à griller la réputation du domaine d'envoi ;
 - **réinitialisation de mot de passe** par lien d'une heure, à usage unique,
   qui révoque toutes les sessions ouvertes ;
 - **connexion avec Google** en option, qui se rattache au compte existant

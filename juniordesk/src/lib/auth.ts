@@ -23,6 +23,7 @@ import { SESSION_TTL_SECONDS, type Account } from './store/types';
 import { createToken, fingerprint, readToken, subscriptionId } from './tokens';
 import { sendMail } from './email/send';
 import { isPlausibleEmail } from './email-address';
+import { allowSend } from './send-limit';
 import {
   accountVerificationMail,
   accountExistsMail,
@@ -171,6 +172,17 @@ export async function register(input: {
   }
   const problem = passwordProblem(input.password);
   if (problem) return { ok: false, error: problem };
+
+  /*
+   * Limite posée avant tout le reste. Sans elle, ce formulaire permet
+   * d'inonder la boîte de n'importe qui : il suffit de le renvoyer en
+   * boucle avec son adresse. Le refus rend exactement la même chose qu'un
+   * succès — dire « trop de demandes » révélerait que l'adresse est visée.
+   */
+  const allowance = await allowSend('inscription', email);
+  if (!allowance.allowed) {
+    return { ok: true, simulated: false };
+  }
 
   const store = getStore();
   const id = accountId(email);
@@ -463,6 +475,13 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
   if (attempts > MAX_RESET_REQUESTS) {
     // Message volontairement identique au cas nominal : révéler qu'une limite
     // a été atteinte révélerait que le compte existe.
+    return { ok: true, simulated: false };
+  }
+
+  // Plafond global en plus de la limite par compte : celle-ci protège une
+  // personne, celui-là protège la réputation du domaine d'envoi.
+  const allowance = await allowSend('reinitialisation', normalized);
+  if (!allowance.allowed) {
     return { ok: true, simulated: false };
   }
 

@@ -210,6 +210,38 @@ sessions d'un compte sont révoquées à sa suppression.
 Dix tentatives de connexion par compte et par quart d'heure. Au-delà, le refus
 est opposé même avec le bon mot de passe pendant la fenêtre.
 
+### Limitation des envois d'e-mail
+
+Trois formulaires publics font partir un e-mail vers une adresse que
+l'appelant choisit : inscription, création d'alerte, demande de
+réinitialisation. Sans limite, ils servent à inonder la boîte d'un tiers, et à
+faire classer le domaine comme source de spam — ce qui condamne ensuite toutes
+les alertes du site.
+
+Deux limites, parce qu'elles répondent à deux attaques différentes :
+
+| Limite | Valeur | Ce qu'elle protège |
+|---|---|---|
+| Par adresse | 3 par heure | la boîte d'une personne prise pour cible |
+| Globale | 200 par heure (`EMAIL_HOURLY_CAP`) | la réputation du domaine d'envoi |
+
+La limite par adresse ne peut rien contre l'arrosage de mille adresses une
+fois chacune ; le plafond global, si.
+
+**Un refus est indiscernable d'un succès.** La page rend exactement le même
+message, et rien n'est envoyé. Dire « trop de demandes pour cette adresse »
+transformerait le formulaire en moyen de savoir qui possède un compte ici, ou
+qui est pris pour cible — exactement ce que le reste du code s'applique à
+éviter.
+
+Les compteurs sont tenus sur l'empreinte de l'adresse canonique, ce qui évite
+d'écrire des adresses dans le magasin de compteurs et empêche de contourner la
+limite en ajoutant un point à une adresse Gmail.
+
+Si le magasin est indisponible, l'envoi passe. C'est assumé : un compteur est
+une protection, pas une condition du service, et bloquer rendrait l'inscription
+impossible à la moindre panne de Redis.
+
 ### Suppression
 
 Déclenchable par la personne elle-même depuis son espace, derrière une case à
