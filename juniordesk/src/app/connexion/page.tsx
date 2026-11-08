@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
+import { isGoogleEnabled } from '@/lib/google';
+import { GoogleButton } from '@/components/google-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +34,19 @@ export default async function LoginPage({
       'Votre adresse n’a pas encore été confirmée. Ouvrez l’e-mail reçu à l’inscription et ' +
       'cliquez le lien de confirmation.',
     tropdetentatives: 'Trop de tentatives. Réessayez dans un quart d’heure.',
+    googleabsent: 'La connexion avec Google n’est pas configurée sur ce site.',
+    googleannule: 'Connexion Google abandonnée. Rien n’a été modifié.',
+    googleincomplet: 'Réponse incomplète de Google. Réessayez.',
+    googleexpire:
+      'La demande a expiré avant votre retour de Google. Relancez la connexion.',
+    googleetat:
+      'La réponse de Google ne correspond pas à la demande partie d’ici. Par sécurité, ' +
+      'la connexion a été refusée. Relancez-la depuis cette page.',
+    googleechange: 'L’échange avec Google a échoué. Réessayez dans un moment.',
+    googlenonverifie:
+      'Google n’a pas confirmé que cette adresse vous appartient. Créez plutôt un compte ' +
+      'avec un mot de passe : nous vous enverrons un lien de confirmation.',
+    google: 'La connexion avec Google a échoué.',
   };
   const error = ERRORS[code];
   const verified = params['verifie'] === '1';
@@ -60,10 +75,12 @@ export default async function LoginPage({
         </p>
       ) : null}
 
+      <GoogleButton label="Continuer avec Google" />
+
       <form
         method="post"
         action="/api/compte/connexion"
-        className="mt-7 rounded-card border border-line bg-card p-5 shadow-card"
+        className="mt-5 rounded-card border border-line bg-card p-5 shadow-card"
       >
         <label className="block">
           <span className="block text-[15px] font-bold">Adresse e-mail</span>
@@ -109,6 +126,19 @@ export default async function LoginPage({
           Mot de passe oublié ?
         </Link>
       </p>
+
+      {/*
+        * Dit ici plutôt que dans un message d'erreur : si la personne s'est
+        * inscrite avec Google, elle n'a pas de mot de passe, et la connexion
+        * échouera avec le message générique. Le répondre dans l'erreur
+        * révélerait l'existence du compte à qui tape une adresse au hasard.
+        */}
+      {isGoogleEnabled() ? (
+        <p className="mt-3 text-[13px] text-muted-2">
+          Si vous vous êtes inscrit avec Google, utilisez le bouton ci-dessus : ce compte n’a
+          pas de mot de passe tant que vous ne lui en donnez pas un.
+        </p>
+      ) : null}
     </main>
   );
 }

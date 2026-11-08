@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { brand } from '@/lib/brand';
 import { currentAccount, MIN_PASSWORD_LENGTH } from '@/lib/auth';
+import { GoogleButton } from '@/components/google-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,10 +70,12 @@ export default async function SignUpPage({
         </p>
       ) : null}
 
+      <GoogleButton label="S’inscrire avec Google" />
+
       <form
         method="post"
         action="/api/compte/inscription"
-        className="mt-7 rounded-card border border-line bg-card p-5 shadow-card"
+        className="mt-5 rounded-card border border-line bg-card p-5 shadow-card"
       >
         <label className="block">
           <span className="block text-[15px] font-bold">Adresse e-mail</span>

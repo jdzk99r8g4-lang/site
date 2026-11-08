@@ -22,6 +22,7 @@ import { getStore } from './store';
 import { SESSION_TTL_SECONDS, type Account } from './store/types';
 import { createToken, fingerprint, readToken, subscriptionId } from './tokens';
 import { sendMail } from './email/send';
+import { isPlausibleEmail } from './email-address';
 import {
   accountVerificationMail,
   accountExistsMail,
@@ -36,6 +37,9 @@ const scrypt = promisify(scryptCallback) as (
 ) => Promise<Buffer>;
 
 export const SESSION_COOKIE = 'jd_session';
+
+// Réexporté ici : plusieurs pages et tests l'importent depuis `auth`.
+export { isPlausibleEmail } from './email-address';
 
 /**
  * Longueur minimale du mot de passe.
@@ -90,7 +94,14 @@ export async function hashPassword(password: string): Promise<string> {
  * réponse révèle la position du premier octet faux, ce qui suffit à
  * reconstruire l'empreinte octet par octet.
  */
-export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  stored: string | null,
+): Promise<boolean> {
+  // Compte sans mot de passe (créé via Google) : aucun mot de passe ne peut
+  // convenir, et surtout pas la chaîne vide.
+  if (!stored) return false;
+
   const parts = stored.split('$');
   if (parts.length !== 6 || parts[0] !== 'scrypt') return false;
 
@@ -114,19 +125,6 @@ export async function verifyPassword(password: string, stored: string): Promise<
 /* --------------------------------------------------------------------------
  * Validation
  * ------------------------------------------------------------------------ */
-
-export function isPlausibleEmail(email: string): boolean {
-  const trimmed = email.trim();
-  if (trimmed.length < 6 || trimmed.length > 254) return false;
-  if (/\s/.test(trimmed)) return false;
-  const parts = trimmed.split('@');
-  if (parts.length !== 2) return false;
-  const [local, domain] = parts as [string, string];
-  if (local.length === 0 || domain.length < 3) return false;
-  if (!domain.includes('.')) return false;
-  if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) return false;
-  return true;
-}
 
 export function passwordProblem(password: string): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) {
@@ -192,6 +190,7 @@ export async function register(input: {
     id,
     email,
     passwordHash: await hashPassword(input.password),
+    googleId: null,
     verified: false,
     createdAt: new Date().toISOString(),
     verifiedAt: null,
@@ -477,7 +476,7 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
 
   // L'empreinte du mot de passe actuel est inscrite dans le jeton : elle rend
   // le lien inutilisable dès que le mot de passe a changé, donc une seule fois.
-  const subject = `${account.id}:${fingerprint(account.passwordHash)}`;
+  const subject = `${account.id}:${resetMark(account)}`;
   const token = createToken(subject, 'reset', RESET_TTL_SECONDS);
 
   const mail = passwordResetMail({
@@ -496,6 +495,23 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
  * passe a changé » contient « mot de passe », et un filtrage par sous-chaîne
  * renvoyait les gens au mauvais endroit.
  */
+/**
+ * Empreinte du mot de passe courant, inscrite dans le lien de
+ * réinitialisation pour le rendre utilisable une seule fois.
+ *
+ * Un compte sans mot de passe — créé via Google — a besoin d'une valeur
+ * stable malgré tout : on prend son identifiant. Dès qu'un mot de passe est
+ * posé, l'empreinte change et le lien cesse de fonctionner, comme pour les
+ * autres.
+ *
+ * Exportée pour que `tests/auth.test.ts` fabrique un lien valide sans passer
+ * par la boîte mail. Dupliquer la règle dans le test la ferait diverger en
+ * silence le jour où elle change.
+ */
+export function resetMark(account: Account): string {
+  return fingerprint(account.passwordHash ?? `sans-mot-de-passe:${account.id}`);
+}
+
 export type ResetFailureReason = 'lien' | 'motdepasse';
 
 export type ResetResult =
@@ -532,7 +548,7 @@ export async function checkResetToken(token: string): Promise<ResetResult> {
     return { ok: false, reason: 'lien', error: 'Ce compte n’existe plus.' };
   }
 
-  if (fingerprint(account.passwordHash) !== mark) {
+  if (resetMark(account) !== mark) {
     return {
       ok: false,
       reason: 'lien',
@@ -584,4 +600,104 @@ export async function resetPassword(token: string, newPassword: string): Promise
   await store.deleteSessionsOf(account.id);
 
   return { ok: true };
+}
+
+/* --------------------------------------------------------------------------
+ * Connexion avec Google
+ * ------------------------------------------------------------------------ */
+
+export type GoogleSignInResult =
+  | { ok: true; created: boolean; linked: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Connecte, rattache ou crée un compte à partir d'une identité Google.
+ *
+ * ---------------------------------------------------------------------------
+ * Le rattachement, et la raison pour laquelle il est conditionné
+ * ---------------------------------------------------------------------------
+ * Quelqu'un s'inscrit avec un mot de passe, puis revient des mois plus tard
+ * en cliquant « Continuer avec Google » avec la même adresse. Sans
+ * rattachement, il obtient un second compte, vide, et ne comprend pas où sont
+ * passées ses offres enregistrées. C'est le piège classique de l'ajout d'une
+ * connexion sociale.
+ *
+ * Mais rattacher sur la seule foi d'une adresse serait une faille béante :
+ * il suffirait de créer un compte Google portant l'adresse d'un tiers pour
+ * s'emparer de son compte JuniorDesk. D'où la condition : Google doit
+ * affirmer que l'adresse est vérifiée. Sans cela, on refuse, et on le dit.
+ */
+export async function signInWithGoogle(identity: {
+  sub: string;
+  email: string;
+  emailVerified: boolean;
+}): Promise<GoogleSignInResult> {
+  const email = identity.email.trim().toLowerCase();
+
+  if (!isPlausibleEmail(email)) {
+    return { ok: false, error: 'Google a transmis une adresse inexploitable.' };
+  }
+
+  if (!identity.emailVerified) {
+    return {
+      ok: false,
+      error:
+        'Google n’a pas confirmé que cette adresse vous appartient. Créez un compte avec un ' +
+        'mot de passe : nous vous enverrons un lien de confirmation.',
+    };
+  }
+
+  const store = getStore();
+  const id = accountId(email);
+  const existing = await store.getAccount(id);
+  const now = new Date().toISOString();
+
+  let account: Account;
+  let created = false;
+  let linked = false;
+
+  if (existing) {
+    account = existing;
+    if (!account.googleId) {
+      account.googleId = identity.sub;
+      linked = true;
+    }
+    // Une adresse vérifiée par Google vaut la confirmation que nous aurions
+    // demandée par e-mail : inutile de la redemander.
+    if (!account.verified) {
+      account.verified = true;
+      account.verifiedAt = now;
+    }
+  } else {
+    created = true;
+    account = {
+      id,
+      email,
+      // Pas de mot de passe : ce compte se connecte par Google. La personne
+      // peut s'en donner un plus tard via « mot de passe oublié ».
+      passwordHash: null,
+      googleId: identity.sub,
+      verified: true,
+      createdAt: now,
+      verifiedAt: now,
+      lastLoginAt: null,
+      savedOfferIds: [],
+      applications: [],
+    };
+  }
+
+  account.lastLoginAt = now;
+  await store.saveAccount(account);
+
+  const token = await store.createSession(account.id, SESSION_TTL_SECONDS);
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: SESSION_TTL_SECONDS,
+  });
+
+  return { ok: true, created, linked };
 }

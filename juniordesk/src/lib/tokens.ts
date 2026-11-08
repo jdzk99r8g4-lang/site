@@ -18,6 +18,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { canonicalizeEmail } from './email-address';
 
 export type TokenPurpose = 'confirm' | 'unsubscribe' | 'click' | 'reset';
 
@@ -98,14 +99,18 @@ export function readToken(token: string, expected: TokenPurpose): TokenResult {
 }
 
 /**
- * Identifiant d’inscription dérivé de l’adresse.
+ * Identifiant dérivé de l’adresse, partagé par les alertes et les comptes.
  *
- * Déterministe : deux inscriptions avec la même adresse donnent le même
- * identifiant, donc la seconde met à jour la première au lieu de créer un
- * doublon qui recevrait deux fois chaque alerte.
+ * Déterministe, et calculé sur la forme CANONIQUE de l’adresse : deux
+ * saisies qui désignent la même boîte donnent le même identifiant. C’est ce
+ * qui empêche `p.nom@gmail.com` et `pnom@gmail.com` — une seule et même boîte
+ * chez Gmail — de produire deux comptes.
  */
 export function subscriptionId(email: string): string {
-  return createHmac('sha256', secret()).update(email.trim().toLowerCase()).digest('hex').slice(0, 24);
+  return createHmac('sha256', secret())
+    .update(canonicalizeEmail(email))
+    .digest('hex')
+    .slice(0, 24);
 }
 
 /**

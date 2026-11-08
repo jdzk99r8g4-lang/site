@@ -24,6 +24,7 @@ const {
   passwordProblem,
   register,
   requestPasswordReset,
+  resetMark,
   resetPassword,
   verifyAccount,
   verifyPassword,
@@ -45,8 +46,7 @@ async function createVerifiedAccount(email = 'etudiant@exemple.fr', password = '
 async function resetTokenFor(email: string): Promise<string> {
   const account = await getStore().getAccount(accountId(email));
   if (!account) throw new Error('compte absent');
-  const { fingerprint } = await import('@/lib/tokens');
-  return createToken(`${account.id}:${fingerprint(account.passwordHash)}`, 'reset', 3600);
+  return createToken(`${account.id}:${resetMark(account)}`, 'reset', 3600);
 }
 
 describe('hachage des mots de passe', () => {
@@ -149,8 +149,7 @@ describe('réinitialisation du mot de passe', () => {
     const { email } = await createVerifiedAccount();
     const store = getStore();
     const account = await store.getAccount(accountId(email));
-    const { fingerprint } = await import('@/lib/tokens');
-    const expired = createToken(`${account!.id}:${fingerprint(account!.passwordHash)}`, 'reset', -1);
+    const expired = createToken(`${account!.id}:${resetMark(account!)}`, 'reset', -1);
 
     expect(await checkResetToken(expired)).toMatchObject({ ok: false });
   });
@@ -182,6 +181,40 @@ describe('réinitialisation du mot de passe', () => {
     await resetPassword(await resetTokenFor(email), 'nouveaumotdepasse');
     expect((await getStore().getAccount(accountId(email)))?.verified).toBe(true);
     expect(await login({ email, password: 'nouveaumotdepasse' })).toEqual({ ok: true });
+  });
+});
+
+describe('doublon Gmail', () => {
+  it('deux graphies de la même boîte Gmail donnent UN seul compte', async () => {
+    // Le défaut signalé : « p.nom@gmail.com » puis « pnom@gmail.com »
+    // créaient deux comptes pour une seule boîte.
+    await register({ email: 'p.nom@gmail.com', password: 'alternancefinance' });
+    await verifyAccount(createToken(accountId('p.nom@gmail.com'), 'confirm'));
+
+    expect(accountId('pnom@gmail.com')).toBe(accountId('p.nom@gmail.com'));
+    expect(await login({ email: 'pnom@gmail.com', password: 'alternancefinance' })).toEqual({
+      ok: true,
+    });
+  });
+
+  it('le suffixe + ne crée pas non plus de doublon', async () => {
+    await register({ email: 'etudiant@gmail.com', password: 'alternancefinance' });
+    await verifyAccount(createToken(accountId('etudiant@gmail.com'), 'confirm'));
+
+    expect(
+      await login({ email: 'etudiant+juniordesk@gmail.com', password: 'alternancefinance' }),
+    ).toEqual({ ok: true });
+  });
+
+  it('mais deux adresses distinctes hors Gmail restent deux comptes', async () => {
+    // Chez d'autres hébergeurs, le point peut séparer deux personnes.
+    await register({ email: 'p.nom@exemple.fr', password: 'alternancefinance' });
+    await verifyAccount(createToken(accountId('p.nom@exemple.fr'), 'confirm'));
+
+    expect(accountId('pnom@exemple.fr')).not.toBe(accountId('p.nom@exemple.fr'));
+    expect(await login({ email: 'pnom@exemple.fr', password: 'alternancefinance' })).toMatchObject({
+      ok: false,
+    });
   });
 });
 

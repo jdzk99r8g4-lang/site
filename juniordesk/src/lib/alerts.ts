@@ -19,8 +19,12 @@ import { getStore } from './store';
 import type { AlertSubscription } from './store/types';
 import { createToken, readToken, subscriptionId } from './tokens';
 import { sendMail } from './email/send';
+import { isPlausibleEmail } from './email-address';
 import { confirmationMail, digestMail } from './email/templates';
 import { allFamilySlugs, familyBySlug } from './taxonomy';
+
+// Réexporté : `tests/alerts.test.ts` et la route d'inscription s'en servent.
+export { isPlausibleEmail } from './email-address';
 
 export interface SubscribeInput {
   email: string;
@@ -32,27 +36,6 @@ export interface SubscribeInput {
 export type SubscribeResult =
   | { ok: true; alreadyConfirmed: boolean; simulated: boolean }
   | { ok: false; error: string };
-
-/**
- * Validation d’adresse volontairement simple.
- *
- * Aucune expression régulière ne décide correctement si une adresse existe :
- * seule la confirmation par e-mail le fait, et c’est exactement ce que fait le
- * double opt-in. On écarte donc le manifestement invalide, et on laisse la
- * confirmation trancher le reste.
- */
-export function isPlausibleEmail(email: string): boolean {
-  const trimmed = email.trim();
-  if (trimmed.length < 6 || trimmed.length > 254) return false;
-  if (/\s/.test(trimmed)) return false;
-  const parts = trimmed.split('@');
-  if (parts.length !== 2) return false;
-  const [local, domain] = parts as [string, string];
-  if (local.length === 0 || domain.length < 3) return false;
-  if (!domain.includes('.')) return false;
-  if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) return false;
-  return true;
-}
 
 export async function subscribe(input: SubscribeInput): Promise<SubscribeResult> {
   const email = input.email.trim().toLowerCase();

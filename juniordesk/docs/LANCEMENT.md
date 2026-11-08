@@ -75,6 +75,19 @@ Sans elle, rien ne doit être publié.
       elle qui construit les liens des e-mails, y compris ceux de
       réinitialisation de mot de passe
 
+## 5 ter. Si vous activez la connexion Google
+
+- [ ] ID client OAuth créé dans la console Google Cloud, type « Application Web »
+- [ ] URI de redirection autorisée déclarée à l'identique :
+      `<NEXT_PUBLIC_SITE_URL>/api/compte/google/retour`
+- [ ] `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` renseignés
+- [ ] Vérification de marque demandée à Google. Sans elle, l'écran de
+      consentement n'affiche que le nom de domaine, sans nom ni logo — ce qui
+      inquiète un étudiant au moment précis où on lui demande de se connecter
+- [ ] Politique de confidentialité et conditions en ligne : Google les exige
+      pour la vérification, et les mentions légales doivent donc être
+      terminées d'abord
+
 ## 6. Vérifications finales
 
 - [ ] `npm run verify` passe
@@ -86,6 +99,9 @@ Sans elle, rien ne doit être publié.
 - [ ] Parcours de mot de passe oublié : lien reçu, nouveau mot de passe
       accepté, ancien refusé, lien inutilisable une seconde fois, et sessions
       des autres appareils bien fermées
+- [ ] Si Google est activé : connexion depuis un compte Google neuf, puis
+      depuis un compte dont l'adresse existe déjà avec un mot de passe —
+      le second doit RATTACHER et non créer un doublon
 - [ ] Vérifier que la connexion fonctionne de façon répétée : si elle échoue
       une fois sur deux, c'est que Redis n'est pas branché et que chaque
       processus a sa propre mémoire

@@ -26,6 +26,8 @@ export default async function MySpacePage({
 
   const params = await searchParams;
   const confirmationMissing = params['erreur'] === 'confirmation';
+  const welcome = params['bienvenue'] === '1';
+  const linked = params['rattache'] === '1';
 
   const live = await getLiveOffers();
   const byId = new Map(live.map((offer) => [offer.id, offer]));
@@ -56,6 +58,21 @@ export default async function MySpacePage({
       {/* Pas de bouton de déconnexion ici : l'en-tête en porte déjà un. */}
       <h1 className="text-2xl font-extrabold sm:text-3xl">Mon espace</h1>
       <p className="mt-1.5 text-sm text-muted">{account.email}</p>
+
+      {welcome ? (
+        <p role="status" className="mt-6 rounded-card border border-accent/40 bg-accent-bg p-4 text-sm">
+          Compte créé avec Google. Votre adresse est déjà confirmée — vous pouvez mettre des
+          offres de côté tout de suite.
+        </p>
+      ) : null}
+
+      {linked ? (
+        <p role="status" className="mt-6 rounded-card border border-accent/40 bg-accent-bg p-4 text-sm">
+          Votre compte Google a été rattaché au compte que vous aviez déjà à cette adresse.
+          Vos offres enregistrées, vos candidatures et votre alerte sont intactes : vous
+          pouvez désormais vous connecter d’une façon ou de l’autre.
+        </p>
+      ) : null}
 
       {confirmationMissing ? (
         <p role="alert" className="mt-6 rounded-card border border-warn/40 bg-warn-bg p-4 text-sm">

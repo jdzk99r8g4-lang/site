@@ -64,7 +64,7 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 145 tests unitaires |
+| `npm test` | 175 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
@@ -115,6 +115,8 @@ src/
 │   ├── store/          Persistance (Redis Upstash ou mémoire)
 │   ├── alerts.ts       Alertes e-mail, double opt-in
 │   ├── auth.ts         Comptes, mots de passe, sessions — SERVEUR UNIQUEMENT
+│   ├── google.ts       Connexion Google (OIDC) — SERVEUR UNIQUEMENT
+│   ├── email-address.ts Validation et forme canonique des adresses
 │   ├── tokens.ts       Signature HMAC des liens — SERVEUR UNIQUEMENT
 │   └── stats.ts        Compteurs agrégés, sans aucun traceur
 └── app/
@@ -177,6 +179,7 @@ Tout est dans `.env.example`, commenté ligne par ligne.
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Persistance des offres **et des comptes** | **en production** |
 | `CRON_SECRET` | Protège la collecte planifiée | **en production** |
 | `ALERTS_SECRET` | Signe les liens d'alerte et de compte | **en production** |
+| `GOOGLE_CLIENT_ID` / `_SECRET` | Bouton « Continuer avec Google » | facultatif |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Envoi des alertes | pour notifier |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | `true` le jour du lancement seulement | — |
 
@@ -210,6 +213,8 @@ Ce qui est en place :
 - dix tentatives de connexion par quart d'heure et par compte ;
 - **réinitialisation de mot de passe** par lien d'une heure, à usage unique,
   qui révoque toutes les sessions ouvertes ;
+- **connexion avec Google** en option, qui se rattache au compte existant
+  portant la même adresse au lieu d'en créer un second ;
 - suppression du compte immédiate et complète, depuis l'espace personnel.
 
 Le lien de réinitialisation ne sert qu'une fois sans qu'on ait à stocker quoi
@@ -221,6 +226,34 @@ en-tête que l'appelant contrôle se détourne vers le domaine de son choix.
 **Les comptes rendent Redis obligatoire.** Sans lui, le magasin est en mémoire,
 donc ni partagé entre processus ni conservé au redémarrage : une personne peut
 créer un compte et ne pas réussir à s'y connecter.
+
+## Connexion avec Google
+
+Facultative : sans `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`, le bouton ne
+s'affiche pas et le site fonctionne entièrement par e-mail et mot de passe.
+
+Flux OpenID Connect par code d'autorisation, écrit à la main — aucune
+dépendance ajoutée. Portée demandée : `openid email`, rien d'autre. Pas de
+`profile`, donc ni nom ni photo : on n'en a pas l'usage et on ne les
+stockerait pas.
+
+Trois points qui méritent d'être connus :
+
+- **Le rattachement est conditionné.** Quelqu'un qui s'est inscrit avec un mot
+  de passe puis revient par Google avec la même adresse retrouve son compte,
+  ses offres et ses alertes — mais seulement si Google affirme que l'adresse
+  est vérifiée. Sans cette condition, créer un compte Google portant l'adresse
+  d'un tiers suffirait à s'emparer de son compte.
+- **La signature du jeton d'identité n'est pas vérifiée, et c'est voulu.** Le
+  jeton n'arrive pas par le navigateur : ce serveur le récupère directement
+  auprès de Google sur une liaison TLS vérifiée, cas pour lequel OpenID
+  Connect Core (§3.1.3.7) rend le contrôle de signature facultatif. Émetteur,
+  destinataire, expiration et `nonce` sont vérifiés, eux.
+- **L'adresse de retour vient de `NEXT_PUBLIC_SITE_URL`**, jamais de l'en-tête
+  `Host`, et doit être déclarée à l'identique dans la console Google Cloud.
+
+Un compte créé par Google n'a pas de mot de passe. Il peut s'en donner un par
+« mot de passe oublié », qui fonctionne aussi dans ce sens.
 
 ## Vie privée : un seul cookie, aucun traceur
 

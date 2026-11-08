@@ -51,8 +51,21 @@ export interface Account {
   /** Dérivé de l'adresse, pour ne jamais faire circuler l'e-mail dans une URL. */
   id: string;
   email: string;
-  /** Format « scrypt$N$r$p$selHex$hashHex ». Jamais le mot de passe en clair. */
-  passwordHash: string;
+  /**
+   * Format « scrypt$N$r$p$selHex$hashHex ». Jamais le mot de passe en clair.
+   *
+   * Null pour un compte créé via Google : il n'y a pas de mot de passe à
+   * stocker, et en inventer un serait pire que de ne pas en avoir. La
+   * personne peut s'en donner un plus tard par « mot de passe oublié ».
+   */
+  passwordHash: string | null;
+  /**
+   * Identifiant stable du compte Google rattaché, ou null.
+   *
+   * On garde l'identifiant (`sub`) et non l'adresse : chez Google l'adresse
+   * peut changer, l'identifiant jamais.
+   */
+  googleId: string | null;
   verified: boolean;
   createdAt: string;
   verifiedAt: string | null;

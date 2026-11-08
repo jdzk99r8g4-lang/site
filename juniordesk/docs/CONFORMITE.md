@@ -161,6 +161,43 @@ il suffit de tester des adresses pour savoir qui est inscrit. Trois mesures :
 3. un hachage est calculé même en l'absence de compte, pour que le temps de
    réponse ne distingue pas les deux cas non plus.
 
+### Identité d'un compte, et le cas Gmail
+
+L'identifiant d'un compte est dérivé de la **forme canonique** de l'adresse,
+et non de l'adresse telle qu'elle est tapée. Gmail ignore les points de la
+partie locale et le suffixe `+` : `p.nom@gmail.com`, `pnom@gmail.com` et
+`nom+juniordesk@gmail.com` arrivent dans la même boîte, et doivent donc donner
+un seul compte.
+
+Cette normalisation **ne s'applique qu'à Gmail**, délibérément. Chez beaucoup
+d'hébergeurs, `a.b@domaine.fr` et `ab@domaine.fr` appartiennent à deux
+personnes différentes ; normaliser partout fusionnerait leurs comptes, ce qui
+est bien pire qu'un doublon.
+
+L'adresse **stockée** reste celle que la personne a tapée : c'est elle qu'elle
+reconnaît dans son espace, et c'est à elle qu'on écrit.
+
+### Connexion avec Google
+
+Portée demandée : `openid email`. Ni nom, ni prénom, ni photo — la portée
+`profile` n'est pas demandée. Ce qui est conservé : l'identifiant stable du
+compte Google (`sub`) et l'adresse. L'identifiant plutôt que l'adresse seule,
+parce que chez Google l'adresse peut changer et l'identifiant jamais.
+
+Le rattachement automatique à un compte existant portant la même adresse n'a
+lieu que si Google affirme `email_verified`. Sans cette condition, créer un
+compte Google avec l'adresse d'un tiers permettrait de s'emparer de son compte
+JuniorDesk — c'est la faille classique de ce mécanisme.
+
+`state` et `nonce` protègent l'aller-retour : le premier contre le
+détournement de session d'autorisation, le second contre le rejeu d'un jeton
+obtenu ailleurs. Les deux sont comparés en temps constant et vivent dans des
+cookies `httpOnly` de dix minutes, effacés au retour quel qu'en soit l'issue.
+
+Aucune ressource n'est chargée depuis un domaine Google sur les pages
+d'inscription et de connexion : le logo est un SVG inclus dans la page.
+Charger une image depuis Google signalerait chaque visite de ces pages.
+
 ### Session
 
 Identifiant aléatoire de 32 octets, stocké côté serveur et donc révocable.

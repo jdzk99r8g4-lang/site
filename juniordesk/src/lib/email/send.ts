@@ -11,6 +11,7 @@
 
 import { Resend } from 'resend';
 import { brand } from '../brand';
+import { maskEmail } from '../email-address';
 
 export interface Mail {
   to: string;
@@ -37,10 +38,10 @@ export async function sendMail(mail: Mail): Promise<SendResult> {
     if (process.env.NODE_ENV === 'production') {
       console.error(
         '[e-mail] RESEND_API_KEY absent en production : l’e-mail destine a ' +
-          `${mask(mail.to)} n’a PAS ete envoye (« ${mail.subject} »).`,
+          `${maskEmail(mail.to)} n’a PAS ete envoye (« ${mail.subject} »).`,
       );
     } else {
-      console.info(`[e-mail simule] -> ${mask(mail.to)} : ${mail.subject}\n${mail.text}\n`);
+      console.info(`[e-mail simule] -> ${maskEmail(mail.to)} : ${mail.subject}\n${mail.text}\n`);
     }
     return { ok: true, simulated: true };
   }
@@ -71,9 +72,4 @@ export async function sendMail(mail: Mail): Promise<SendResult> {
  * Un journal d’application n’a pas besoin de l’adresse complète, et il est
  * souvent conservé plus longtemps et lu par plus de monde que la base.
  */
-export function mask(email: string): string {
-  const [local, domain] = email.split('@');
-  if (!local || !domain) return '***';
-  const head = local.slice(0, 2);
-  return `${head}${'*'.repeat(Math.max(1, local.length - 2))}@${domain}`;
-}
+export { maskEmail as mask } from '../email-address';

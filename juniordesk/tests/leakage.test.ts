@@ -21,6 +21,7 @@ const FORBIDDEN_IN_CLIENT = [
   'lib/alerts',
   'lib/tokens',
   'lib/auth',
+  'lib/google',
   'lib/email',
   'lib/stats',
 ];
@@ -60,7 +61,14 @@ describe('étanchéité client / serveur', () => {
   });
 
   it('aucun secret n’est lu depuis un composant client', () => {
-    const secrets = ['LBA_API_KEY', 'ALERTS_SECRET', 'CRON_SECRET', 'RESEND_API_KEY', 'UPSTASH_'];
+    const secrets = [
+      'LBA_API_KEY',
+      'ALERTS_SECRET',
+      'CRON_SECRET',
+      'RESEND_API_KEY',
+      'UPSTASH_',
+      'GOOGLE_CLIENT_SECRET',
+    ];
     const offenders: string[] = [];
 
     for (const file of sourceFiles) {
@@ -90,7 +98,7 @@ describe('étanchéité client / serveur', () => {
   });
 
   it('les modules serveur portent une garde d’exécution côté client', () => {
-    for (const file of ['src/lib/offers.ts', 'src/lib/auth.ts']) {
+    for (const file of ['src/lib/offers.ts', 'src/lib/auth.ts', 'src/lib/google.ts']) {
       const content = readFileSync(file, 'utf8');
       expect(content, file).toMatch(/typeof window !== 'undefined'/);
       expect(content, file).toMatch(/throw new Error/);
@@ -117,5 +125,19 @@ describe('étanchéité client / serveur', () => {
     const content = readFileSync('src/app/go/[id]/route.ts', 'utf8');
     expect(content).toContain('NextResponse.redirect(offer.applyUrl');
     expect(content).not.toMatch(/redirect\(\s*(?:url\.)?searchParams\.get/);
+  });
+});
+
+describe('feuille de style', () => {
+  it('les champs de mot de passe sont stylés comme les autres', () => {
+    /*
+     * Ils avaient été oubliés dans la liste des sélecteurs : les champs de
+     * mot de passe s'affichaient sans fond ni bordure, donc quasiment
+     * invisibles sur un thème sombre. Repéré à l'œil sur une capture, pas par
+     * un test — d'où celui-ci.
+     */
+    const css = readFileSync('src/app/globals.css', 'utf8');
+    const blocks = css.match(/input\[type='password'\]/g) ?? [];
+    expect(blocks.length, 'password absent des sélecteurs de champ').toBeGreaterThanOrEqual(2);
   });
 });
