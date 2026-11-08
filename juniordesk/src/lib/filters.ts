@@ -11,6 +11,7 @@ import type { ContractGroup, Offer } from './offer';
 import { CONTRACT_GROUP_LABELS, CONTRACT_GROUPS, contractGroups, isLive } from './offer';
 import { JOB_FAMILIES } from './taxonomy';
 import { cityIndex } from './geo';
+import { REGIONS, regionOf } from './regions';
 
 export interface OfferQuery {
   /** Slugs de familles de métiers. Vide = toutes. */
@@ -19,6 +20,14 @@ export interface OfferQuery {
   groups?: readonly ContractGroup[];
   /** Slugs de villes. Vide = toutes. */
   cities?: readonly string[];
+  /**
+   * Slugs de régions. Vide = toutes.
+   *
+   * Maille indispensable pour la finance : La Défense est à Puteaux et à
+   * Courbevoie, pas à Paris. Qui filtre « Paris » rate ces offres ; qui
+   * filtre « Île-de-France » les trouve.
+   */
+  regions?: readonly string[];
   /** Ne garder que les offres démarrant au plus tard à cette date (AAAA-MM-JJ). */
   startsBefore?: string;
   /** Ne garder que les offres démarrant au plus tôt à cette date (AAAA-MM-JJ). */
@@ -38,6 +47,7 @@ export function applyQuery(
   const families = new Set(query.families ?? []);
   const groups = new Set(query.groups ?? []);
   const cities = new Set(query.cities ?? []);
+  const regions = new Set(query.regions ?? []);
   const needle = query.q ? normalize(query.q) : null;
 
   const filtered = offers.filter((offer) => {
@@ -49,6 +59,11 @@ export function applyQuery(
     if (families.size > 0 && !offer.families.some((f) => families.has(f))) return false;
     if (groups.size > 0 && !contractGroups(offer).some((g) => groups.has(g))) return false;
     if (cities.size > 0 && (!offer.place.citySlug || !cities.has(offer.place.citySlug))) return false;
+
+    if (regions.size > 0) {
+      const region = regionOf(offer.place.departement);
+      if (!region || !regions.has(region.slug)) return false;
+    }
 
     if (query.startsAfter || query.startsBefore) {
       // Une offre sans date de début annoncée reste visible : l’écarter
@@ -122,6 +137,8 @@ export interface Facets {
    */
   groups: ContractGroupFacet[];
   cities: Facet[];
+  /** Régions portant au moins une offre, de la plus fournie à la moins fournie. */
+  regions: Facet[];
 }
 
 export interface ContractGroupFacet extends Omit<Facet, 'value'> {
@@ -173,7 +190,28 @@ export function buildFacets(
       label: c.label,
       count: c.count,
     })),
+    regions: buildRegionFacets(live),
   };
+}
+
+/**
+ * Facettes de région, triées par volume.
+ *
+ * Les régions sans offre ne sont pas listées : proposer « Mayotte » un jour
+ * où il n'y a rien n'aide personne. L'ordre est celui du volume et non
+ * l'alphabet, parce que l'Île-de-France concentre l'essentiel des postes en
+ * finance et doit arriver en tête.
+ */
+function buildRegionFacets(offers: readonly Offer[]): Facet[] {
+  const counts = new Map<string, number>();
+  for (const offer of offers) {
+    const region = regionOf(offer.place.departement);
+    if (region) counts.set(region.slug, (counts.get(region.slug) ?? 0) + 1);
+  }
+
+  return REGIONS.filter((r) => (counts.get(r.slug) ?? 0) > 0)
+    .map((r) => ({ value: r.slug, label: r.name, count: counts.get(r.slug) ?? 0 }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'fr'));
 }
 
 function normalize(text: string): string {

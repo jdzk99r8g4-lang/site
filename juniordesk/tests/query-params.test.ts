@@ -41,11 +41,36 @@ describe('lecture des paramètres d’URL', () => {
     expect(query.startsBefore).toBeUndefined();
   });
 
-  it('refuse une ville qui n’a pas la forme d’un slug', () => {
-    // Les villes viennent des offres du jour : on ne peut pas les valider
-    // contre une liste fermée, seulement contre leur forme.
-    const { query } = parseSearchParams({ ville: ['paris', '<script>', 'a'] });
+  it('accepte une ville tapée à la main, accents et casse compris', () => {
+    /*
+     * Le champ « autre ville » reçoit du texte, pas un identifiant. On le
+     * passe par le même `slugify` que celui qui a produit les slugs, pour que
+     * « Saint-Étienne », « saint-etienne » et « SAINT ETIENNE » désignent la
+     * même ville.
+     */
+    expect(parseSearchParams({ ville: 'Saint-Étienne' }).query.cities).toEqual(['saint-etienne']);
+    expect(parseSearchParams({ ville: 'PUTEAUX' }).query.cities).toEqual(['puteaux']);
+    expect(parseSearchParams({ ville: 'Neuilly sur Seine' }).query.cities).toEqual([
+      'neuilly-sur-seine',
+    ]);
+  });
+
+  it('écarte ce qui ne peut pas former un nom de ville', () => {
+    /*
+     * Ce qui reste après `slugify` garde la forme d'un slug, y compris pour
+     * une saisie absurde : « <script> » devient « script ». Ce n'est pas un
+     * danger — la valeur ne sert qu'à comparer avec les villes connues, et
+     * React échappe de toute façon — mais le filtre ne renverra rien. La
+     * page d'offres le dit explicitement plutôt que d'afficher une liste
+     * vide qui ressemble à une panne.
+     */
+    const { query } = parseSearchParams({ ville: ['paris', 'a', '   ', '!!!'] });
     expect(query.cities).toEqual(['paris']);
+  });
+
+  it('ne retient que les régions connues', () => {
+    const { query } = parseSearchParams({ region: ['ile-de-france', 'atlantide'] });
+    expect(query.regions).toEqual(['ile-de-france']);
   });
 
   it('déduplique et borne la recherche libre', () => {

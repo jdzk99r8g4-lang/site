@@ -35,6 +35,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/regions" className="no-underline hover:text-ink">
+                  Régions
+                </Link>
+              </li>
+              <li>
                 <Link href="/villes" className="no-underline hover:text-ink">
                   Villes
                 </Link>

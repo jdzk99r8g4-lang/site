@@ -11,6 +11,8 @@ import type { ContractGroup } from './offer';
 import { CONTRACT_GROUPS } from './offer';
 import type { OfferQuery, SortKey } from './filters';
 import { allFamilySlugs } from './taxonomy';
+import { REGIONS } from './regions';
+import { slugify } from './slug';
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -35,6 +37,7 @@ export interface ParsedQuery {
     families: string[];
     groups: string[];
     cities: string[];
+    regions: string[];
     q: string;
     sort: SortKey;
     startsBefore: string;
@@ -52,9 +55,24 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
       ),
     ),
   ];
-  // Les villes viennent des offres du jour : on ne peut pas les valider contre
-  // une liste fermée, seulement contre leur forme.
-  const cities = [...new Set(list(params['ville']).filter((c) => /^[a-z0-9-]{2,60}$/.test(c)))];
+  /*
+   * Les villes viennent des offres du jour : aucune liste fermée à opposer.
+   * On passe donc la valeur par le même `slugify` que celui qui a produit les
+   * slugs, ce qui fait que « Saint-Étienne », « saint-etienne » et
+   * « SAINT ETIENNE » désignent la même ville. C'est ce qui permet au champ
+   * de recherche de ville d'accepter du texte tapé à la main, et pas
+   * seulement un identifiant issu d'une pastille.
+   */
+  const cities = [
+    ...new Set(
+      list(params['ville'])
+        .map((c) => slugify(c, 8))
+        .filter((c) => /^[a-z0-9-]{2,60}$/.test(c)),
+    ),
+  ];
+
+  const allowedRegions = new Set(REGIONS.map((r) => r.slug));
+  const regions = [...new Set(list(params['region']).filter((r) => allowedRegions.has(r)))];
 
   const q = one(params['q']).slice(0, 80);
   const rawSort = one(params['tri']);
@@ -68,10 +86,11 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
       families,
       groups,
       cities,
+      regions,
       sort,
       ...(q ? { q } : {}),
       ...(startsBefore ? { startsBefore } : {}),
     },
-    selected: { families, groups, cities, q, sort, startsBefore },
+    selected: { families, groups, cities, regions, q, sort, startsBefore },
   };
 }

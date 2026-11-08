@@ -64,7 +64,7 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 130 tests unitaires |
+| `npm test` | 145 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
@@ -109,6 +109,7 @@ src/
 │   ├── taxonomy.ts     Périmètre finance — codes ROME 4.0 v62 vérifiés
 │   ├── sources/        Adaptateurs interchangeables (LBA, France Travail, démo)
 │   ├── normalize…      dedupe.ts · geo.ts · slug.ts · filters.ts
+│   ├── regions.ts      Départements et régions, depuis l'API Géo de l'État
 │   ├── collect.ts      Orchestrateur de la collecte quotidienne
 │   ├── offers.ts       Lecture par les pages — SERVEUR UNIQUEMENT
 │   ├── store/          Persistance (Redis Upstash ou mémoire)
@@ -122,7 +123,7 @@ src/
     └── …               Pages publiques
 ```
 
-### Quatre décisions structurantes
+### Cinq décisions structurantes
 
 **1. Aucune page ne connaît aucune source.** Chaque adaptateur produit du
 `Offer` normalisé ; la source la plus importante du projet a fermé du jour au
@@ -142,7 +143,16 @@ sources échouent, les offres de la veille sont conservées. Un site qui affiche
 des offres d'hier reste utile ; un site vide ne l'est pas. Vérifié par
 `tests/collect.test.ts`.
 
-**4. Le périmètre finance vient du référentiel officiel, et ne s'y limite pas.**
+**4. La géographie se filtre par région autant que par ville.** La Défense
+n'est pas à Paris : elle est à Puteaux, à Courbevoie et à Nanterre. Un étudiant
+qui filtre « Paris » rate donc une grande partie des postes du secteur. Le
+filtre par région règle ce cas, et un second : la liste des villes vient des
+offres du jour, pas d'un référentiel, et peut compter plusieurs centaines
+d'entrées. Les douze villes les plus fournies sont affichées en pastilles, le
+reste passe par un champ de saisie avec autocomplétion native. Le découpage
+départements / régions vient de l'API Géo de l'État, pas de la mémoire.
+
+**5. Le périmètre finance vient du référentiel officiel, et ne s'y limite pas.**
 93 codes ROME relevés dans le Répertoire Opérationnel des Métiers et des Emplois
 (version 4.0 v62, publiée le 19/10/2026, Licence Ouverte), pas écrits de
 mémoire. Mais ROME n'a aucun code pour « private equity », « transaction

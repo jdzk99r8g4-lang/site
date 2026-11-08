@@ -36,6 +36,7 @@ export default async function OffersPage({
     selected.families.length > 0 ||
     selected.groups.length > 0 ||
     selected.cities.length > 0 ||
+    selected.regions.length > 0 ||
     selected.q.length > 0 ||
     selected.startsBefore.length > 0;
 
@@ -44,6 +45,16 @@ export default async function OffersPage({
   // cassé.
   const unsourcedSelected = facets.groups.filter(
     (group) => selected.groups.includes(group.value) && !group.sourced,
+  );
+
+  /*
+   * Même raisonnement pour une ville saisie à la main qui ne porte aucune
+   * offre aujourd'hui — ou qui n'existe pas. Zéro résultat sans explication
+   * ressemble à une panne ; dire « aucune offre à Bourg-en-Bresse » est une
+   * information.
+   */
+  const unknownCities = selected.cities.filter(
+    (slug) => !facets.cities.some((city) => city.value === slug),
   );
 
   return (
@@ -79,6 +90,18 @@ export default async function OffersPage({
               Pourquoi
             </Link>
             .
+          </p>
+        ) : null}
+
+        {unknownCities.length > 0 ? (
+          <p className="mt-5 rounded-card border border-line bg-card p-4 text-sm text-muted">
+            Aucune offre en ligne pour{' '}
+            <strong className="text-ink">{unknownCities.join(', ')}</strong> aujourd’hui.
+            Essayez la région, ou{' '}
+            <Link href="/alertes" className="text-accent">
+              créez une alerte
+            </Link>{' '}
+            pour être prévenu dès qu’une offre y est publiée.
           </p>
         ) : null}
 
