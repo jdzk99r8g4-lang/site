@@ -50,17 +50,33 @@ Sans elle, rien ne doit être publié.
 - [ ] Base Redis Upstash créée, `UPSTASH_REDIS_REST_URL` et `_TOKEN` renseignés
       — **sans cela, les inscriptions aux alertes disparaissent à chaque
       redémarrage**
-- [ ] `CRON_SECRET` et `ALERTS_SECRET` générés (chaînes aléatoires longues)
+- [ ] `CRON_SECRET` et `ALERTS_SECRET` générés (chaînes aléatoires longues).
+      `ALERTS_SECRET` ne devra plus jamais changer : il signe les liens en
+      circulation et dérive les identifiants de compte à partir des adresses
 - [ ] Domaine vérifié chez Resend, `RESEND_API_KEY` et `EMAIL_FROM` renseignés
       — sans quoi les alertes partent en spam
 - [ ] Tâche planifiée vérifiée dans l'interface Vercel : `/api/cron/collect`,
       à 02h40 UTC
+
+## 5 bis. Avant d'ouvrir les comptes largement
+
+- [ ] Implémenter la réinitialisation de mot de passe. Sans elle, un oubli
+      signifie la perte du compte et des offres enregistrées, et la seule
+      issue est une suppression manuelle
+- [ ] Vérifier que Redis est bien branché : sans lui, les comptes ne survivent
+      ni au redémarrage ni au passage d'un processus à l'autre
 
 ## 6. Vérifications finales
 
 - [ ] `npm run verify` passe
 - [ ] Parcours d'alerte déroulé de bout en bout sur l'environnement réel :
       inscription, e-mail reçu, confirmation, désinscription
+- [ ] Parcours de compte déroulé de bout en bout : création, e-mail de
+      vérification reçu, confirmation, connexion, mise de côté d'une offre,
+      déconnexion, reconnexion, suppression du compte
+- [ ] Vérifier que la connexion fonctionne de façon répétée : si elle échoue
+      une fois sur deux, c'est que Redis n'est pas branché et que chaque
+      processus a sa propre mémoire
 - [ ] Un clic depuis la page d'une offre arrive bien chez l'employeur
 - [ ] `/robots.txt` et `/sitemap.xml` répondent
 - [ ] Le bandeau de démonstration a disparu

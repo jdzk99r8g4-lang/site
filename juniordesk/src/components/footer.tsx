@@ -70,13 +70,18 @@ export function Footer() {
         </div>
 
         {/*
-         * Dit une fois, en clair, plutôt que par un bandeau de consentement :
-         * il n'y a rien à consentir puisque rien n'est déposé.
+         * Formulation exacte, et elle a changé le jour où les comptes sont
+         * arrivés : dire « aucun cookie » serait désormais faux. Un cookie de
+         * session est strictement nécessaire au service demandé par la
+         * personne qui se connecte, donc exempté de consentement au titre de
+         * l'article 82 — il n'y a toujours pas de bannière à afficher, mais
+         * il y a bien un cookie, et il faut le dire.
          */}
         <p className="mt-8 border-t border-line pt-6 text-xs text-muted-2">
-          Ce site ne dépose aucun cookie et n’utilise aucun traceur : il ne compte que des
-          totaux anonymes de pages vues et de clics vers les employeurs. C’est pourquoi vous
-          ne voyez aucune bannière à accepter.
+          Aucun traceur publicitaire, aucun outil de mesure tiers : nous ne comptons que des
+          totaux anonymes de pages vues et de clics vers les employeurs. Le seul cookie déposé
+          est celui qui vous garde connecté, et uniquement si vous avez un compte. C’est
+          pourquoi vous ne voyez aucune bannière à accepter.
         </p>
         <p className="mt-2 text-xs text-muted-2">
           © {new Date().getFullYear()} {brand.name}. Stages · Alternances · Jobs juniors.

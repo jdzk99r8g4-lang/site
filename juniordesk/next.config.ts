@@ -2,6 +2,18 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  /*
+   * Racine du suivi de fichiers.
+   *
+   * JuniorDesk vit dans un sous-dossier d'un dépôt qui contient un autre
+   * projet npm à sa racine. Sans ce réglage, Next voit deux fichiers de
+   * verrouillage, choisit celui du parent et trace les fichiers depuis
+   * là — ce qui, au déploiement, embarque le mauvais arbre de dépendances.
+   * Le jour où ce dossier devient son propre dépôt, cette ligne pourra
+   * partir.
+   */
+  outputFileTracingRoot: __dirname,
   // Ne pas annoncer la pile technique dans les en-têtes de réponse.
   poweredByHeader: false,
 

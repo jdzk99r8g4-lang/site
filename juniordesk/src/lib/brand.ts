@@ -47,7 +47,7 @@ export const brand = {
     { title: 'Gratuit, sans compte', detail: 'Aucun abonnement, aucune option payante' },
     { title: 'Mis à jour chaque jour', detail: 'Collecte automatique, offres expirées retirées' },
     { title: 'Candidature chez l’employeur', detail: 'Nous ne nous interposons pas, nous redirigeons' },
-    { title: 'Aucun traceur', detail: 'Pas de cookie, donc pas de bannière à cliquer' },
+    { title: 'Aucun traceur', detail: 'Aucune publicité, aucune bannière à cliquer' },
   ],
 } as const;
 

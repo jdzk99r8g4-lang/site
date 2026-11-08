@@ -36,10 +36,21 @@ Deux points que la page a changés et qu'on lit encore souvent de travers :
 
 ### Ce que fait JuniorDesk
 
-Rien n'est déposé. Pas de cookie, pas de `localStorage`, pas d'identifiant, pas
-de script tiers. Rien n'est lu ni écrit sur le terminal du visiteur, donc
-**l'article 82 ne s'applique pas** : il n'y a pas d'exemption à revendiquer et
-pas de bannière à afficher.
+Côté mesure, rien n'est déposé : pas de cookie de mesure, pas de
+`localStorage`, pas d'identifiant de visiteur, pas de script tiers. La mesure
+ne lit ni n'écrit rien sur le terminal, donc **l'article 82 ne la concerne
+pas**.
+
+Un seul cookie existe sur ce site, `jd_session`, et seulement pour les
+personnes connectées à un compte. Il contient un identifiant de session
+aléatoire et rien d'autre. Il relève d'une exemption **différente** : celle du
+strictement nécessaire à un service expressément demandé. Il n'est jamais lu
+par le code de mesure, et aucun compteur ne le consulte.
+
+Conséquence rédactionnelle, et elle compte : le site ne doit plus dire « aucun
+cookie ». Il dit « aucun traceur, et un seul cookie, celui qui vous garde
+connecté ». La nuance n'est pas cosmétique — une promesse fausse sur ce sujet
+décrédibilise tout le reste de la page.
 
 Les compteurs sont des totaux tenus côté serveur :
 
@@ -113,6 +124,70 @@ Avant publication :
 
 ---
 
+## Comptes étudiants
+
+### Ce qui est collecté
+
+Adresse e-mail, empreinte du mot de passe, dates de création, de confirmation
+et de dernière connexion, offres mises de côté, offres notées « postulé ». Rien
+d'autre : ni nom, ni prénom, ni école, ni niveau d'études, ni CV. Le formulaire
+d'inscription ne les demande pas, et aucun champ caché ne les devine.
+
+**Base légale** : exécution du service demandé par la personne en créant le
+compte.
+
+### Mot de passe
+
+Haché avec **scrypt** (N=16384, r=8, p=1, clé de 64 octets), sel aléatoire de
+16 octets par compte, comparaison en temps constant. Le mot de passe en clair
+n'est jamais écrit nulle part, journaux compris, et il est irrécupérable — y
+compris par nous.
+
+Longueur minimale de dix caractères, sans règle de composition. Les règles du
+type « une majuscule, un chiffre, un caractère spécial » produisent surtout
+« Motdepasse1! », que les outils d'attaque connaissent ; la longueur, elle,
+protège réellement.
+
+### Ce que le formulaire ne révèle pas
+
+Un formulaire d'inscription ou de connexion mal fait devient un annuaire :
+il suffit de tester des adresses pour savoir qui est inscrit. Trois mesures :
+
+1. l'inscription répond la même chose que l'adresse soit déjà connue ou non ;
+   dans le premier cas, c'est un e-mail différent qui part vers la boîte du
+   propriétaire légitime ;
+2. la connexion renvoie un message identique pour « adresse inconnue » et
+   « mot de passe faux » ;
+3. un hachage est calculé même en l'absence de compte, pour que le temps de
+   réponse ne distingue pas les deux cas non plus.
+
+### Session
+
+Identifiant aléatoire de 32 octets, stocké côté serveur et donc révocable.
+Cookie `httpOnly` (illisible par script), `SameSite=Lax`, `Secure` en
+production, durée de trente jours. Supprimé à la déconnexion, et toutes les
+sessions d'un compte sont révoquées à sa suppression.
+
+### Limitation des tentatives
+
+Dix tentatives de connexion par compte et par quart d'heure. Au-delà, le refus
+est opposé même avec le bon mot de passe pendant la fenêtre.
+
+### Suppression
+
+Déclenchable par la personne elle-même depuis son espace, derrière une case à
+cocher. Elle efface le compte, ses sessions, ses offres enregistrées, ses
+candidatures notées et l'alerte e-mail associée. Rien n'est conservé.
+
+### Ce qui manque
+
+La **réinitialisation de mot de passe** n'est pas implémentée. La page de
+connexion l'indique et propose d'écrire pour faire supprimer le compte. À
+traiter avant d'ouvrir le site largement : sans elle, toute personne qui oublie
+son mot de passe perd ses offres enregistrées.
+
+---
+
 ## Rediffusion des offres
 
 La documentation de l'API La bonne alternance autorise explicitement l'exposition
@@ -141,7 +216,9 @@ retrait émanant d'un employeur — elle est renseignée dans les mentions léga
 1. **Identité juridique.** Les mentions légales et la politique de
    confidentialité portent des champs `[À COMPLÉTER]`. Elles ne sont pas
    publiables en l'état, et `NEXT_PUBLIC_ALLOW_INDEXING` doit rester à `false`
-   tant qu'ils subsistent.
+   tant qu'ils subsistent. L'arrivée des comptes rend ce point plus pressant :
+   un service qui conserve des adresses e-mail et des mots de passe doit
+   nommer son responsable de traitement.
 2. **Durée de conservation des IP par l'hébergeur** (voir plus haut).
 3. **Sous-traitants et transferts hors UE** : à renseigner une fois les
    prestataires choisis.

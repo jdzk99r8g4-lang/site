@@ -8,6 +8,7 @@ import { familyBySlug } from '@/lib/taxonomy';
 import { formatDate } from '@/components/offer-card';
 import { ShareButtons } from '@/components/share-buttons';
 import { ContractBadge } from '@/components/contract-badge';
+import { OfferAccountActions } from '@/components/offer-account-actions';
 import { DemoBanner } from '@/components/demo-banner';
 import { OfferCard } from '@/components/offer-card';
 import { toPublicOffer } from '@/lib/offer';
@@ -128,6 +129,10 @@ export default async function OfferPage({ params }: { params: Promise<{ slug: st
             Postuler chez l’employeur
           </a>
           <ShareButtons url={shareUrl} title={offer.title} />
+        </div>
+
+        <div className="mt-4">
+          <OfferAccountActions offerId={offer.id} returnTo={`/offres/${offer.slug}`} />
         </div>
 
         <p className="mt-3 text-xs text-muted">

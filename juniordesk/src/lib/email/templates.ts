@@ -133,6 +133,86 @@ export function digestMail(input: DigestMailInput): { subject: string; text: str
   return { subject, text, html };
 }
 
+/* --------------------------------------------------------------------------
+ * Comptes
+ * ------------------------------------------------------------------------ */
+
+export function accountVerificationMail(input: { verifyUrl: string }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Confirmez votre compte ${brand.name}`;
+
+  const text = [
+    `Bienvenue sur ${brand.name}.`,
+    '',
+    'Confirmez votre adresse en ouvrant ce lien :',
+    input.verifyUrl,
+    '',
+    'Sans cette confirmation, le compte ne sera pas activé. Si vous n’êtes pas à',
+    'l’origine de cette inscription, ignorez ce message.',
+    '',
+    'Ce que nous conservons : votre adresse e-mail, votre mot de passe sous forme',
+    'chiffrée, et les offres que vous mettez de côté. Rien d’autre.',
+    `${brand.url}/confidentialite`,
+    '',
+    brand.name,
+  ].join('\n');
+
+  const html = layout(
+    `<h1>Confirmez votre compte</h1>
+     <p>Bienvenue sur ${escapeHtml(brand.name)}. Une dernière étape avant d’y accéder.</p>
+     <p><a class="btn" href="${escapeAttr(input.verifyUrl)}">Confirmer mon adresse</a></p>
+     <p class="muted">Sans cette confirmation, le compte ne sera pas activé. Si vous n’êtes
+        pas à l’origine de cette inscription, ignorez ce message.</p>
+     <hr />
+     <p class="muted">Nous conservons votre adresse e-mail, votre mot de passe sous forme
+        chiffrée, et les offres que vous mettez de côté. Rien d’autre.
+        <a href="${escapeAttr(`${brand.url}/confidentialite`)}">Vos droits</a>.</p>`,
+  );
+
+  return { subject, text, html };
+}
+
+/**
+ * Message envoyé lorsqu'une inscription vise une adresse déjà inscrite.
+ *
+ * Il part vers la boîte du propriétaire légitime, et non vers l'écran de
+ * celui qui a rempli le formulaire : c'est ce qui permet de répondre la même
+ * chose dans les deux cas sans révéler qui possède un compte ici.
+ */
+export function accountExistsMail(input: { loginUrl: string }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Vous avez déjà un compte ${brand.name}`;
+
+  const text = [
+    `Quelqu’un vient de tenter de créer un compte ${brand.name} avec votre adresse.`,
+    '',
+    'Vous en avez déjà un. Connectez-vous ici :',
+    input.loginUrl,
+    '',
+    'Si ce n’était pas vous, il n’y a rien à faire : aucun compte n’a été créé et',
+    'aucune information n’a été modifiée.',
+    '',
+    brand.name,
+  ].join('\n');
+
+  const html = layout(
+    `<h1>Vous avez déjà un compte</h1>
+     <p>Quelqu’un vient de tenter de créer un compte ${escapeHtml(brand.name)} avec votre
+        adresse. Vous en avez déjà un.</p>
+     <p><a class="btn" href="${escapeAttr(input.loginUrl)}">Me connecter</a></p>
+     <p class="muted">Si ce n’était pas vous, il n’y a rien à faire : aucun compte n’a été
+        créé et aucune information n’a été modifiée.</p>`,
+  );
+
+  return { subject, text, html };
+}
+
 function layout(body: string): string {
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />

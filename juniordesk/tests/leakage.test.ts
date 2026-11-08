@@ -20,6 +20,7 @@ const FORBIDDEN_IN_CLIENT = [
   'lib/collect',
   'lib/alerts',
   'lib/tokens',
+  'lib/auth',
   'lib/email',
   'lib/stats',
 ];
@@ -88,10 +89,26 @@ describe('étanchéité client / serveur', () => {
     expect(offenders, offenders.join('\n')).toEqual([]);
   });
 
-  it('le module de lecture des offres porte une garde d’exécution côté client', () => {
-    const content = readFileSync('src/lib/offers.ts', 'utf8');
-    expect(content).toMatch(/typeof window !== 'undefined'/);
-    expect(content).toMatch(/throw new Error/);
+  it('les modules serveur portent une garde d’exécution côté client', () => {
+    for (const file of ['src/lib/offers.ts', 'src/lib/auth.ts']) {
+      const content = readFileSync(file, 'utf8');
+      expect(content, file).toMatch(/typeof window !== 'undefined'/);
+      expect(content, file).toMatch(/throw new Error/);
+    }
+  });
+
+  it('le cookie de session est httpOnly et non lisible en JavaScript', () => {
+    // Un cookie de session lisible par script est volable par la moindre
+    // faille d'injection. `httpOnly` est la seule chose qui l'empêche.
+    const content = readFileSync('src/lib/auth.ts', 'utf8');
+    expect(content).toMatch(/httpOnly:\s*true/);
+    expect(content).toMatch(/sameSite:\s*'lax'/);
+    expect(content).toMatch(/secure:\s*process\.env\.NODE_ENV === 'production'/);
+  });
+
+  it('les mots de passe ne sont jamais comparés avec ===', () => {
+    const content = readFileSync('src/lib/auth.ts', 'utf8');
+    expect(content).toContain('timingSafeEqual');
   });
 
   it('la redirection comptée ne redirige jamais vers une adresse fournie dans l’URL', () => {

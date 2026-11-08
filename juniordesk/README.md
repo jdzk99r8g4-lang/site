@@ -64,7 +64,7 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 100 tests unitaires |
+| `npm test` | 114 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
@@ -93,7 +93,8 @@ src/
 │   ├── collect.ts      Orchestrateur de la collecte quotidienne
 │   ├── offers.ts       Lecture par les pages — SERVEUR UNIQUEMENT
 │   ├── store/          Persistance (Redis Upstash ou mémoire)
-│   ├── alerts.ts       Alertes e-mail, double opt-in, sans compte
+│   ├── alerts.ts       Alertes e-mail, double opt-in
+│   ├── auth.ts         Comptes, mots de passe, sessions — SERVEUR UNIQUEMENT
 │   ├── tokens.ts       Signature HMAC des liens — SERVEUR UNIQUEMENT
 │   └── stats.ts        Compteurs agrégés, sans aucun traceur
 └── app/
@@ -122,12 +123,17 @@ sources échouent, les offres de la veille sont conservées. Un site qui affiche
 des offres d'hier reste utile ; un site vide ne l'est pas. Vérifié par
 `tests/collect.test.ts`.
 
-**4. Le périmètre finance vient du référentiel officiel.** 93 codes ROME relevés
-dans le Répertoire Opérationnel des Métiers et des Emplois (version 4.0 v62,
-publiée le 19/10/2026, Licence Ouverte), pas écrits de mémoire. Une liste
-d'exclusions explicite tient l'immobilier, la qualité industrielle et les
-organismes de sécurité sociale à l'écart — sans elle, « assurance qualité » et
-« audit énergétique » rempliraient le site de postes d'usine.
+**4. Le périmètre finance vient du référentiel officiel, et ne s'y limite pas.**
+93 codes ROME relevés dans le Répertoire Opérationnel des Métiers et des Emplois
+(version 4.0 v62, publiée le 19/10/2026, Licence Ouverte), pas écrits de
+mémoire. Mais ROME n'a aucun code pour « private equity », « transaction
+services », « banque d'investissement » ou « fintech » : ces verticales sont
+rattachées par mots-clés sur l'intitulé, **en plus** du code ROME et non à sa
+place. Sans cela, une alternance M&A codée « clientèle bancaire » par
+l'employeur n'apparaîtrait jamais sous M&A. Dix-huit familles au total, et une
+liste d'exclusions explicite qui tient l'immobilier et la qualité industrielle
+à l'écart — sans elle, « assurance qualité » et « audit énergétique »
+rempliraient le site de postes d'usine.
 
 ---
 
@@ -139,23 +145,60 @@ Tout est dans `.env.example`, commenté ligne par ligne.
 |---|---|---|
 | `LBA_API_KEY` | Collecte des offres d'alternance | pour avoir de vraies offres |
 | `FRANCE_TRAVAIL_CLIENT_ID` / `_SECRET` | Active stages et postes juniors | quand l'accès sera accordé |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Persistance | **en production** |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Persistance des offres **et des comptes** | **en production** |
 | `CRON_SECRET` | Protège la collecte planifiée | **en production** |
-| `ALERTS_SECRET` | Signe les liens de confirmation | **en production** |
+| `ALERTS_SECRET` | Signe les liens d'alerte et de compte | **en production** |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Envoi des alertes | pour notifier |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | `true` le jour du lancement seulement | — |
 
-Sans Redis en production, les offres **et les inscriptions aux alertes** sont
-perdues au redémarrage. Le code le signale bruyamment dans les journaux.
+Sans Redis en production, les offres, **les comptes** et les inscriptions aux
+alertes sont perdus au redémarrage et ne sont pas partagés entre processus. Le
+code le signale bruyamment dans les journaux.
+
+`ALERTS_SECRET` ne doit jamais changer une fois le site en ligne : il signe les
+liens en circulation et sert à dériver les identifiants de compte à partir des
+adresses. Le modifier déconnecterait les comptes de leurs alertes.
 
 ---
 
-## Vie privée : aucun traceur, aucune bannière
+## Comptes étudiants
 
-Pas de cookie, pas d'identifiant, pas d'outil tiers. Rien n'est lu ni écrit sur
-le terminal du visiteur, donc l'article 82 de la loi Informatique et Libertés ne
-s'applique pas : il n'y a pas d'exemption à revendiquer et pas de bannière à
-afficher.
+Un compte sert à trois choses, et pas une de plus : mettre des offres de côté,
+noter celles où l'on a postulé, et retrouver son alerte e-mail. Pas de profil,
+pas de CV, pas de nom — seulement une adresse et un mot de passe.
+
+Ce qui est en place :
+
+- mot de passe haché avec **scrypt**, sel aléatoire par compte, comparaison en
+  temps constant ;
+- adresse confirmée par lien signé, sans quoi on pourrait créer un compte avec
+  l'adresse de quelqu'un d'autre ;
+- session dans un cookie `httpOnly`, `SameSite=Lax`, `Secure` en production,
+  révocable côté serveur ;
+- le formulaire de connexion ne révèle jamais si une adresse est inscrite, et un
+  hachage est calculé même quand le compte n'existe pas, pour que le temps de
+  réponse ne le trahisse pas non plus ;
+- dix tentatives de connexion par quart d'heure et par compte ;
+- suppression du compte immédiate et complète, depuis l'espace personnel.
+
+Ce qui n'y est pas encore : la **réinitialisation de mot de passe**. La page de
+connexion le dit plutôt que d'afficher un lien mort.
+
+**Les comptes rendent Redis obligatoire.** Sans lui, le magasin est en mémoire,
+donc ni partagé entre processus ni conservé au redémarrage : une personne peut
+créer un compte et ne pas réussir à s'y connecter.
+
+## Vie privée : un seul cookie, aucun traceur
+
+Aucun traceur publicitaire, aucun outil de mesure tiers, aucun script externe.
+La mesure se limite à des compteurs agrégés côté serveur, sans adresse IP ni
+identifiant de visiteur : elle ne lit ni n'écrit rien sur le terminal, donc
+l'article 82 de la loi Informatique et Libertés ne la concerne pas.
+
+Un seul cookie existe, `jd_session`, et uniquement pour les personnes
+connectées. Il est strictement nécessaire au service demandé, donc exempté de
+consentement à ce titre. Il n'y a toujours pas de bannière à afficher — mais le
+site ne prétend plus « aucun cookie », ce qui serait désormais faux.
 
 La mesure se limite à des compteurs agrégés côté serveur, rangés par mois et
 supprimés automatiquement au bout de 25 mois — la durée maximale recommandée par

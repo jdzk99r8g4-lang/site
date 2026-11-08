@@ -7,7 +7,8 @@
  * définitivement perdues au redémarrage.
  */
 
-import type { AlertSubscription, OfferStore, Snapshot, SnapshotMeta } from './types';
+import { randomBytes } from 'node:crypto';
+import type { Account, AlertSubscription, OfferStore, Snapshot, SnapshotMeta } from './types';
 
 export function createMemoryStore(): OfferStore {
   let snapshot: Snapshot | null = null;
@@ -15,6 +16,9 @@ export function createMemoryStore(): OfferStore {
   const announced = new Set<string>();
   const subscriptions = new Map<string, AlertSubscription>();
   const counters = new Map<string, Map<string, number>>();
+  const accounts = new Map<string, Account>();
+  const sessions = new Map<string, { accountId: string; expiresAt: number }>();
+  const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
   return {
     async getSnapshot() {
@@ -73,6 +77,55 @@ export function createMemoryStore(): OfferStore {
       const fields = counters.get(bucket);
       if (!fields) return {};
       return Object.fromEntries(fields);
+    },
+
+    async saveAccount(account) {
+      accounts.set(account.id, account);
+    },
+
+    async getAccount(id) {
+      return accounts.get(id) ?? null;
+    },
+
+    async deleteAccount(id) {
+      accounts.delete(id);
+    },
+
+    async createSession(accountId, ttlSeconds) {
+      const token = randomBytes(32).toString('base64url');
+      sessions.set(token, { accountId, expiresAt: Date.now() + ttlSeconds * 1000 });
+      return token;
+    },
+
+    async readSession(token) {
+      const session = sessions.get(token);
+      if (!session) return null;
+      if (session.expiresAt <= Date.now()) {
+        sessions.delete(token);
+        return null;
+      }
+      return session.accountId;
+    },
+
+    async deleteSession(token) {
+      sessions.delete(token);
+    },
+
+    async deleteSessionsOf(accountId) {
+      for (const [token, session] of sessions) {
+        if (session.accountId === accountId) sessions.delete(token);
+      }
+    },
+
+    async touchRateLimit(key, windowSeconds) {
+      const now = Date.now();
+      const current = rateLimits.get(key);
+      if (!current || current.resetAt <= now) {
+        rateLimits.set(key, { count: 1, resetAt: now + windowSeconds * 1000 });
+        return 1;
+      }
+      current.count += 1;
+      return current.count;
     },
   };
 }

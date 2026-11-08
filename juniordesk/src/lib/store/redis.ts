@@ -18,8 +18,9 @@
  */
 
 import { Redis } from '@upstash/redis';
+import { randomBytes } from 'node:crypto';
 import type { Offer } from '../offer';
-import type { AlertSubscription, OfferStore, Snapshot, SnapshotMeta } from './types';
+import type { Account, AlertSubscription, OfferStore, Snapshot, SnapshotMeta } from './types';
 import { COUNTER_TTL_SECONDS } from './types';
 
 const META_KEY = 'jd:snapshot:meta';
@@ -28,6 +29,11 @@ const ANNOUNCED_KEY = 'jd:announced';
 const SUBSCRIPTION_KEY = (id: string) => `jd:sub:${id}`;
 const SUBSCRIPTION_INDEX = 'jd:subs';
 const COUNTER_KEY = (bucket: string) => `jd:counter:${bucket}`;
+const ACCOUNT_KEY = (id: string) => `jd:account:${id}`;
+const SESSION_KEY = (token: string) => `jd:session:${token}`;
+/** Index des sessions d'un compte, pour pouvoir toutes les révoquer d'un coup. */
+const ACCOUNT_SESSIONS_KEY = (accountId: string) => `jd:account-sessions:${accountId}`;
+const RATE_KEY = (key: string) => `jd:rate:${key}`;
 
 /** Nombre d’offres par tranche. Compromis entre taille de requête et nombre d’allers-retours. */
 const CHUNK_SIZE = 150;
@@ -155,6 +161,63 @@ export function createRedisStore(): OfferStore {
         if (Number.isFinite(parsed)) result[field] = parsed;
       }
       return result;
+    },
+
+    async saveAccount(account) {
+      await redis.set(ACCOUNT_KEY(account.id), account);
+    },
+
+    async getAccount(id) {
+      return (await redis.get<Account>(ACCOUNT_KEY(id))) ?? null;
+    },
+
+    async deleteAccount(id) {
+      await redis.del(ACCOUNT_KEY(id));
+    },
+
+    async createSession(accountId, ttlSeconds) {
+      // 32 octets issus du générateur cryptographique : un identifiant de
+      // session doit être impossible à deviner, c'est tout ce qui protège le
+      // compte une fois la connexion faite.
+      const token = randomBytes(32).toString('base64url');
+      const pipeline = redis.pipeline();
+      pipeline.set(SESSION_KEY(token), accountId, { ex: ttlSeconds });
+      pipeline.sadd(ACCOUNT_SESSIONS_KEY(accountId), token);
+      pipeline.expire(ACCOUNT_SESSIONS_KEY(accountId), ttlSeconds);
+      await pipeline.exec();
+      return token;
+    },
+
+    async readSession(token) {
+      return (await redis.get<string>(SESSION_KEY(token))) ?? null;
+    },
+
+    async deleteSession(token) {
+      const accountId = await redis.get<string>(SESSION_KEY(token));
+      const pipeline = redis.pipeline();
+      pipeline.del(SESSION_KEY(token));
+      if (accountId) pipeline.srem(ACCOUNT_SESSIONS_KEY(accountId), token);
+      await pipeline.exec();
+    },
+
+    async deleteSessionsOf(accountId) {
+      const tokens = await redis.smembers(ACCOUNT_SESSIONS_KEY(accountId));
+      const pipeline = redis.pipeline();
+      for (const token of tokens) pipeline.del(SESSION_KEY(token));
+      pipeline.del(ACCOUNT_SESSIONS_KEY(accountId));
+      await pipeline.exec();
+    },
+
+    async touchRateLimit(key, windowSeconds) {
+      const redisKey = RATE_KEY(key);
+      const pipeline = redis.pipeline();
+      pipeline.incr(redisKey);
+      // L'expiration n'est posée qu'au premier incrément, sinon la fenêtre
+      // glisserait indéfiniment et la limite ne se relâcherait jamais.
+      pipeline.expire(redisKey, windowSeconds, 'NX');
+      const results = (await pipeline.exec()) as unknown[];
+      const count = results[0];
+      return typeof count === 'number' ? count : 1;
     },
   };
 }

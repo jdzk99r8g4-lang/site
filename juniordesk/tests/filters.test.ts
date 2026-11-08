@@ -15,7 +15,7 @@ function offer(id: string, overrides: Partial<Offer> = {}): Offer {
     employer: { name: 'Banque Exemple', brand: null, siret: null, website: null, size: null },
     place: { address: '', city: 'Paris', citySlug: 'paris', postalCode: '75002', departement: '75', lat: null, lon: null },
     contract: { kinds: ['apprentissage'] as ContractKind[], start: '2027-01-01', startIsFlexible: false, durationMonths: 12, remote: null },
-    families: ['banque-credit'],
+    families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
     publishedAt: '2026-11-01T00:00:00.000Z',
@@ -56,12 +56,12 @@ describe('filtrage', () => {
     const offers = [
       offer('paris'),
       offer('lyon', {
-        families: ['audit-comptabilite'],
+        families: ['audit'],
         place: { address: '', city: 'Lyon', citySlug: 'lyon', postalCode: '69002', departement: '69', lat: null, lon: null },
       }),
     ];
     expect(applyQuery(offers, { cities: ['lyon'] }, NOW).map((o) => o.id)).toEqual(['lyon']);
-    expect(applyQuery(offers, { families: ['audit-comptabilite'] }, NOW).map((o) => o.id)).toEqual(['lyon']);
+    expect(applyQuery(offers, { families: ['audit'] }, NOW).map((o) => o.id)).toEqual(['lyon']);
   });
 
   it('garde les offres sans date de début quand on filtre sur la date', () => {
@@ -111,7 +111,7 @@ describe('facettes', () => {
 
   it('les facettes de métier à zéro ne sont pas affichées', () => {
     const facets = buildFacets([offer('a')], ['alternance'], NOW);
-    expect(facets.families.map((f) => f.value)).toEqual(['banque-credit']);
+    expect(facets.families.map((f) => f.value)).toEqual(['banque-detail-credit']);
   });
 
   it('les offres expirées ne comptent pas dans les facettes', () => {

@@ -39,6 +39,30 @@ export interface AlertSubscription {
   lastSentAt: string | null;
 }
 
+/**
+ * Compte étudiant.
+ *
+ * Volontairement pauvre : une adresse, un mot de passe haché, et ce que la
+ * personne a mis de côté. Pas de nom, pas de date de naissance, pas d'école,
+ * pas de CV — rien qui ne serve au service rendu. Moins on garde, moins il y a
+ * à perdre.
+ */
+export interface Account {
+  /** Dérivé de l'adresse, pour ne jamais faire circuler l'e-mail dans une URL. */
+  id: string;
+  email: string;
+  /** Format « scrypt$N$r$p$selHex$hashHex ». Jamais le mot de passe en clair. */
+  passwordHash: string;
+  verified: boolean;
+  createdAt: string;
+  verifiedAt: string | null;
+  lastLoginAt: string | null;
+  /** Identifiants d'offres mises de côté. */
+  savedOfferIds: string[];
+  /** Offres pour lesquelles la personne déclare avoir postulé. */
+  applications: { offerId: string; markedAt: string }[];
+}
+
 export interface OfferStore {
   getSnapshot(): Promise<Snapshot | null>;
   getSnapshotMeta(): Promise<SnapshotMeta | null>;
@@ -72,7 +96,33 @@ export interface OfferStore {
    */
   bump(bucket: string, field: string, by?: number): Promise<void>;
   readBucket(bucket: string): Promise<Record<string, number>>;
+
+  /* ---------------------------------------------------------------------
+   * Comptes et sessions
+   * ------------------------------------------------------------------- */
+
+  saveAccount(account: Account): Promise<void>;
+  getAccount(id: string): Promise<Account | null>;
+  deleteAccount(id: string): Promise<void>;
+
+  /** Crée une session et renvoie son identifiant opaque. */
+  createSession(accountId: string, ttlSeconds: number): Promise<string>;
+  /** Identifiant de compte derrière une session, ou null si elle n'existe plus. */
+  readSession(token: string): Promise<string | null>;
+  deleteSession(token: string): Promise<void>;
+  /** Révoque toutes les sessions d'un compte (suppression, changement de mot de passe). */
+  deleteSessionsOf(accountId: string): Promise<void>;
+
+  /**
+   * Compte les tentatives sur une clé dans une fenêtre glissante, et renvoie
+   * le total APRÈS incrément. Sert à ralentir les attaques par force brute
+   * sur la connexion.
+   */
+  touchRateLimit(key: string, windowSeconds: number): Promise<number>;
 }
 
 /** 25 mois, en secondes. Durée maximale recommandée par la CNIL. */
 export const COUNTER_TTL_SECONDS = 25 * 31 * 24 * 60 * 60;
+
+/** Durée de vie d'une session : 30 jours. */
+export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;

@@ -50,7 +50,7 @@ describe('normalisation La bonne alternance', () => {
     expect(offer?.id).toBe('lba:offres_emploi_lba:ABC123');
     expect(offer?.title).toBe('Alternance — Chargé de clientèle bancaire');
     expect(offer?.applyUrl).toBe('https://banque.example/offres/abc123');
-    expect(offer?.families).toEqual(['banque-credit']);
+    expect(offer?.families).toEqual(['banque-detail-credit']);
     expect(offer?.place.city).toBe('Paris');
     expect(offer?.place.departement).toBe('75');
     expect(offer?.contract.kinds).toEqual(['apprentissage']);
@@ -122,7 +122,7 @@ describe('normalisation La bonne alternance', () => {
       },
       COLLECTED_AT,
     );
-    expect(offer?.families).toEqual(['corporate-finance']);
+    expect(offer?.families).toEqual(['direction-financiere']);
     expect(offer?.place.city).toBeNull();
     expect(offer?.employer.name).toBeNull();
   });

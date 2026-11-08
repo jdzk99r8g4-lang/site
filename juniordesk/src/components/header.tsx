@@ -1,29 +1,18 @@
-'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { brand } from '@/lib/brand';
+import { currentAccount } from '@/lib/auth';
+import { HeaderNav } from './header-nav';
 
 /**
- * En-tête collant, reprise du brouillon : point vert lumineux devant le nom,
- * navigation sobre, soulignement vert sur la page courante, et un seul appel à
- * l'action en orange.
+ * En-tête du site.
  *
- * Les entrées « Se connecter », « S'abonner », « Mes candidatures » et
- * « Profil » du brouillon ne figurent pas ici : les comptes et l'espace
- * recruteur sont la V2, et le site est gratuit sans abonnement. Mettre un
- * bouton qui ne mène à rien coûte plus de confiance qu'il n'en rapporte.
+ * Composant SERVEUR : il lit la session pour savoir s'il faut afficher
+ * « Se connecter » ou « Mon espace ». C'est volontaire — la session ne doit
+ * jamais être lisible depuis le navigateur, et le cookie est `httpOnly`.
+ * Seule la navigation, qui a besoin du chemin courant, tourne côté client.
  */
-const LINKS = [
-  { href: '/', label: 'Accueil' },
-  { href: '/offres', label: 'Offres' },
-  { href: '/metiers', label: 'Métiers' },
-  { href: '/alertes', label: 'Alertes' },
-  { href: '/sources', label: 'À propos' },
-] as const;
-
-export function Header() {
-  const pathname = usePathname();
+export async function Header() {
+  const account = await currentAccount();
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-bg-header">
@@ -36,33 +25,47 @@ export function Header() {
           {brand.name}
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-x-6 gap-y-1">
-          {LINKS.map((link) => {
-            const active =
-              link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={active ? 'page' : undefined}
-                className={`relative pb-1 text-sm font-medium no-underline transition-colors ${
-                  active
-                    ? 'text-ink after:absolute after:inset-x-0 after:-bottom-[14px] after:h-0.5 after:bg-accent'
-                    : 'text-muted hover:text-ink'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <span className="rounded-full bg-accent-bg px-2.5 py-0.5 text-xs font-semibold text-accent">
+          {brand.scope.label}
+        </span>
 
-        <Link
-          href="/alertes"
-          className="ml-auto rounded-lg bg-cta px-4 py-2.5 text-sm font-bold text-cta-ink no-underline transition-colors hover:bg-cta-hover active:scale-[0.97]"
-        >
-          Créer une alerte
-        </Link>
+        <HeaderNav />
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          {account ? (
+            <>
+              <Link
+                href="/mon-espace"
+                className="text-sm font-semibold text-ink no-underline hover:text-accent"
+              >
+                Mon espace
+              </Link>
+              <form method="post" action="/api/compte/deconnexion">
+                <button
+                  type="submit"
+                  className="rounded-lg border border-line bg-card px-3.5 py-2 text-sm font-semibold transition-colors hover:border-line-hover"
+                >
+                  Se déconnecter
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/connexion"
+                className="text-sm font-medium text-muted no-underline hover:text-ink"
+              >
+                Se connecter
+              </Link>
+              <Link
+                href="/inscription"
+                className="rounded-lg bg-cta px-4 py-2.5 text-sm font-bold text-cta-ink no-underline transition-colors hover:bg-cta-hover active:scale-[0.97]"
+              >
+                S’inscrire
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

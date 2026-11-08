@@ -23,11 +23,18 @@ export default function PrivacyPage() {
 
       <LegalSection title="En résumé">
         <ul className="list-disc space-y-1.5 pl-5">
-          <li>Aucun cookie n’est déposé. Aucun traceur n’est utilisé. Aucun outil tiers n’est chargé.</li>
-          <li>Consulter ce site ne demande aucun compte et ne crée aucun profil.</li>
+          <li>Aucun traceur, aucun outil de mesure tiers, aucune publicité.</li>
           <li>
-            Si vous créez une alerte, nous conservons votre adresse e-mail et vos critères —
-            rien d’autre.
+            Consulter les offres ne demande aucun compte, ne dépose aucun cookie et ne crée
+            aucun profil.
+          </li>
+          <li>
+            Un seul cookie existe : celui qui vous garde connecté, déposé uniquement si vous
+            créez un compte et vous connectez.
+          </li>
+          <li>
+            Si vous créez une alerte ou un compte, nous conservons votre adresse e-mail et ce
+            que vous y mettez — rien d’autre.
           </li>
           <li>Aucune donnée n’est cédée, revendue ni partagée à des fins publicitaires.</li>
         </ul>
@@ -43,13 +50,34 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Le seul cookie de ce site">
+        <p>
+          Si vous créez un compte et vous connectez, un cookie nommé{' '}
+          <code className="font-mono text-xs text-ink">jd_session</code> est déposé. Il
+          contient un identifiant de session aléatoire, et rien d’autre : ni votre adresse, ni
+          votre mot de passe, ni aucune information lisible. Il dure trente jours, s’efface à
+          la déconnexion, et il est marqué <code className="font-mono text-xs text-ink">httpOnly</code>,
+          ce qui empêche n’importe quel script de le lire.
+        </p>
+        <p>
+          Ce cookie est strictement nécessaire au service que vous avez demandé — rester
+          connecté — et relève donc de l’exemption de consentement prévue par l’article 82 de
+          la loi Informatique et Libertés. Il n’est jamais utilisé pour la mesure d’audience
+          ni pour vous suivre d’un site à l’autre.
+        </p>
+        <p>
+          Si vous ne créez pas de compte, aucun cookie n’est déposé, et aucun stockage de
+          votre navigateur n’est utilisé.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Pourquoi il n’y a pas de bannière cookies">
         <p>
           Parce qu’il n’y a rien à consentir. L’article 82 de la loi Informatique et Libertés
-          encadre la lecture et l’écriture d’informations sur votre terminal. Ce site n’écrit
-          aucun cookie, ne dépose aucun identifiant, ne lit aucun stockage local et ne charge
-          aucun script tiers : rien n’est ni lu ni écrit sur votre appareil, donc l’article 82
-          ne s’applique pas.
+          encadre la lecture et l’écriture d’informations sur votre terminal ; il prévoit une
+          exemption pour ce qui est strictement nécessaire à un service expressément demandé.
+          Le cookie de session en relève. Et hors connexion, ce site n’écrit rien du tout : ni
+          cookie, ni identifiant, ni stockage local, et aucun script tiers n’est chargé.
         </p>
         <p>
           La mesure d’audience se limite à des compteurs agrégés, tenus sur notre serveur :
@@ -86,6 +114,40 @@ export default function PrivacyPage() {
         <p className="text-[13px] text-muted-2">
           Base légale : intérêt légitime à assurer la sécurité et la disponibilité du service
           (article 6.1.f du RGPD).
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Votre compte">
+        <p>
+          <strong className="text-ink">Données collectées :</strong> votre adresse e-mail,
+          votre mot de passe sous forme chiffrée, les dates de création, de confirmation et de
+          dernière connexion, les offres que vous mettez de côté et celles que vous notez
+          comme « postulé ». Rien d’autre : ni nom, ni école, ni niveau d’études, ni CV.
+        </p>
+        <p>
+          <strong className="text-ink">Mot de passe :</strong> il n’est jamais conservé en
+          clair ni sous une forme réversible. Nous en gardons une empreinte calculée avec
+          scrypt, une fonction volontairement lente et coûteuse en mémoire, avec un sel
+          aléatoire propre à chaque compte. Nous sommes dans l’incapacité de retrouver votre
+          mot de passe, et c’est voulu.
+        </p>
+        <p>
+          <strong className="text-ink">« J’ai postulé » :</strong> cette mention est
+          déclarative. La candidature se fait sur le site de l’employeur ; nous n’avons aucun
+          moyen de savoir si vous avez postulé, et nous ne cherchons pas à le savoir. Rien
+          n’est transmis à l’employeur.
+        </p>
+        <p>
+          <strong className="text-ink">Base légale :</strong> l’exécution du service que vous
+          demandez en créant un compte. L’adresse est confirmée par un lien envoyé par e-mail,
+          pour qu’on ne puisse pas créer un compte avec l’adresse de quelqu’un d’autre.
+        </p>
+        <p>
+          <strong className="text-ink">Durée de conservation :</strong> jusqu’à la suppression
+          du compte, que vous pouvez déclencher vous-même depuis votre espace. La suppression
+          est immédiate et définitive : compte, sessions, offres enregistrées, candidatures
+          notées et alerte associée sont effacés. Un compte dont l’adresse n’est jamais
+          confirmée reste inactif, le lien expirant au bout de trente jours.
         </p>
       </LegalSection>
 

@@ -52,7 +52,7 @@ describe('périmètre finance', () => {
     // M1219 = Conseiller en fusion et acquisition.
     const result = matchFamilies({ title: 'Alternance analyste', romeCodes: ['M1219'] });
     expect(result.via).toBe('rome');
-    expect(result.families).toEqual(['corporate-finance']);
+    expect(result.families).toEqual(['fusions-acquisitions']);
   });
 
   it('retient une offre M&A dont le code ROME est générique, grâce à l’intitulé', () => {
@@ -63,7 +63,7 @@ describe('périmètre finance', () => {
       romeCodes: [],
     });
     expect(result.via).toBe('keyword');
-    expect(result.families).toEqual(['corporate-finance']);
+    expect(result.families).toEqual(['fusions-acquisitions']);
   });
 
   it('écarte une offre hors périmètre', () => {
@@ -105,7 +105,7 @@ describe('périmètre finance', () => {
       // M1204 (contrôle de gestion) est déclaré après C1206 (banque).
       romeCodes: ['M1204', 'C1206'],
     });
-    expect(result.families).toEqual(['banque-credit', 'controle-de-gestion']);
+    expect(result.families).toEqual(['banque-detail-credit', 'controle-de-gestion']);
   });
 
   it('chaque famille a un libellé et une introduction non vides', () => {
@@ -113,6 +113,64 @@ describe('périmètre finance', () => {
       const family = familyBySlug(slug);
       expect(family?.label.length ?? 0).toBeGreaterThan(2);
       expect(family?.intro.length ?? 0).toBeGreaterThan(30);
+    }
+  });
+});
+
+describe('verticales que ROME ne distingue pas', () => {
+  it('chaque famille sans code ROME a des mots-clés, sinon elle est inatteignable', () => {
+    for (const family of JOB_FAMILIES) {
+      if (family.romeCodes.length === 0) {
+        expect(family.keywords.length, `${family.slug} n’a ni code ROME ni mot-clé`).toBeGreaterThan(2);
+      }
+    }
+  });
+
+  it.each([
+    ['Alternance — Analyste private equity', 'private-equity'],
+    ['Alternance Transaction Services — due diligence financière', 'transaction-services'],
+    ['Alternance analyste banque d’investissement (ECM)', 'banque-investissement'],
+    ['Alternance chargé de conformité KYC', 'risques-conformite'],
+    ['Alternance analyste fintech paiement', 'fintech-paiements'],
+    ['Alternance gestion d’actifs — reporting ESG', 'gestion-actifs'],
+    ['Alternance banque privée — ingénierie patrimoniale', 'banque-privee-patrimoine'],
+    ['Alternance trésorerie et financement de projet', 'tresorerie-financement'],
+  ])('« %s » est rattachée à %s sans aucun code ROME', (title, expected) => {
+    expect(matchFamilies({ title, romeCodes: [] }).families).toContain(expected);
+  });
+
+  it('les mots-clés S’AJOUTENT au code ROME au lieu de le remplacer', () => {
+    /*
+     * Le cas qui motive tout le mécanisme : un employeur code son alternance
+     * M&A en C1201 « accueil et services clientèle bancaire ». Avant, les
+     * mots-clés ne servaient que de repli, donc l’offre n’apparaissait jamais
+     * sous « Fusions-acquisitions » — la famille que l’étudiant consulte.
+     */
+    const result = matchFamilies({
+      title: 'Alternance analyste M&A',
+      romeCodes: ['C1201'],
+    });
+    expect(result.via).toBe('both');
+    expect(result.families).toContain('fusions-acquisitions');
+    expect(result.families).toContain('banque-detail-credit');
+  });
+
+  it('une offre finance sans code ni verticale reste retenue', () => {
+    const result = matchFamilies({ title: 'Alternance assistant financier', romeCodes: [] });
+    expect(result.families).toEqual(['direction-financiere']);
+    expect(result.via).toBe('keyword');
+  });
+
+  it('les secteurs annoncés sur la page À propos ont tous une famille', () => {
+    // Si cette liste et la taxonomie divergent, la page promet des métiers
+    // que le site ne sait pas classer.
+    const promised = [
+      'Banque d’investissement', 'M&A', 'Private Equity', 'Gestion d’actifs',
+      'Audit', 'Transaction Services', 'Fintech', 'Assurance',
+    ];
+    const titles = promised.map((p) => `Alternance ${p}`);
+    for (const title of titles) {
+      expect(matchFamilies({ title, romeCodes: [] }).families.length, title).toBeGreaterThan(0);
     }
   });
 });

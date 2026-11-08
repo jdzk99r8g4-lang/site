@@ -42,7 +42,7 @@ function offer(overrides: Partial<Offer> = {}): Offer {
     employer: { name: 'Banque', brand: null, siret: null, website: null, size: null },
     place: { address: '', city: 'Paris', citySlug: 'paris', postalCode: '75002', departement: '75', lat: null, lon: null },
     contract: { kinds: ['apprentissage'], start: null, startIsFlexible: false, durationMonths: null, remote: null },
-    families: ['banque-credit'],
+    families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
     publishedAt: null,
@@ -68,7 +68,7 @@ describe('validation d’adresse', () => {
 
 describe('double opt-in', () => {
   it('une inscription n’est pas confirmée tant que le lien n’est pas cliqué', async () => {
-    const result = await subscribe({ email: 'Etudiant@Exemple.FR', families: ['banque-credit'] });
+    const result = await subscribe({ email: 'Etudiant@Exemple.FR', families: ['banque-detail-credit'] });
     expect(result.ok).toBe(true);
 
     const stored = await getStore().getSubscription(subscriptionId('etudiant@exemple.fr'));
@@ -110,15 +110,15 @@ describe('double opt-in', () => {
   });
 
   it('se réinscrire met à jour les critères sans créer de doublon', async () => {
-    await subscribe({ email: 'etudiant@exemple.fr', families: ['banque-credit'] });
+    await subscribe({ email: 'etudiant@exemple.fr', families: ['banque-detail-credit'] });
     const id = subscriptionId('etudiant@exemple.fr');
     await confirm(createToken(id, 'confirm'));
 
-    const again = await subscribe({ email: 'etudiant@exemple.fr', families: ['audit-comptabilite'] });
+    const again = await subscribe({ email: 'etudiant@exemple.fr', families: ['audit'] });
     expect(again).toMatchObject({ ok: true, alreadyConfirmed: true });
 
     const stored = await getStore().getSubscription(id);
-    expect(stored?.families).toEqual(['audit-comptabilite']);
+    expect(stored?.families).toEqual(['audit']);
     // Déjà confirmée : on ne redemande pas un consentement déjà donné.
     expect(stored?.confirmed).toBe(true);
   });
@@ -135,12 +135,12 @@ describe('double opt-in', () => {
   it('ignore les métiers et familles de contrat inventés', async () => {
     await subscribe({
       email: 'etudiant@exemple.fr',
-      families: ['banque-credit', 'metier-inexistant'],
+      families: ['banque-detail-credit', 'metier-inexistant'],
       groups: ['alternance', 'invente' as never],
       cities: ['paris', 'PAS VALIDE !!'],
     });
     const stored = await getStore().getSubscription(subscriptionId('etudiant@exemple.fr'));
-    expect(stored?.families).toEqual(['banque-credit']);
+    expect(stored?.families).toEqual(['banque-detail-credit']);
     expect(stored?.groups).toEqual(['alternance']);
     expect(stored?.cities).toEqual(['paris']);
   });
@@ -152,8 +152,8 @@ describe('appariement offre / alerte', () => {
   });
 
   it('filtre par métier', () => {
-    expect(matchesSubscription(offer(), subscription({ families: ['audit-comptabilite'] }))).toBe(false);
-    expect(matchesSubscription(offer(), subscription({ families: ['banque-credit'] }))).toBe(true);
+    expect(matchesSubscription(offer(), subscription({ families: ['audit'] }))).toBe(false);
+    expect(matchesSubscription(offer(), subscription({ families: ['banque-detail-credit'] }))).toBe(true);
   });
 
   it('filtre par ville', () => {
@@ -167,7 +167,7 @@ describe('appariement offre / alerte', () => {
   });
 
   it('les critères se cumulent', () => {
-    const sub = subscription({ families: ['banque-credit'], cities: ['lyon'] });
+    const sub = subscription({ families: ['banque-detail-credit'], cities: ['lyon'] });
     expect(matchesSubscription(offer(), sub)).toBe(false);
   });
 });
@@ -179,9 +179,9 @@ describe('résumé des critères', () => {
   });
 
   it('reprend les libellés lisibles, pas les slugs', () => {
-    const text = describeCriteria({ families: ['banque-credit'], cities: ['paris'], groups: ['alternance'] });
-    expect(text).toContain('Banque et crédit');
+    const text = describeCriteria({ families: ['banque-detail-credit'], cities: ['paris'], groups: ['alternance'] });
+    expect(text).toContain('Banque de détail et crédit');
     expect(text).toContain('Alternance');
-    expect(text).not.toContain('banque-credit');
+    expect(text).not.toContain('banque-detail-credit');
   });
 });

@@ -9,14 +9,14 @@ describe('lecture des paramètres d’URL', () => {
   it('lit les filtres', () => {
     const { query } = parseSearchParams({
       type: ['alternance', 'stage'],
-      metier: 'banque-credit',
+      metier: 'banque-detail-credit',
       ville: 'paris',
       tri: 'start',
       debut_avant: '2027-01-01',
       q: 'credit',
     });
     expect(query.groups).toEqual(['alternance', 'stage']);
-    expect(query.families).toEqual(['banque-credit']);
+    expect(query.families).toEqual(['banque-detail-credit']);
     expect(query.cities).toEqual(['paris']);
     expect(query.sort).toBe('start');
     expect(query.startsBefore).toBe('2027-01-01');
@@ -24,8 +24,8 @@ describe('lecture des paramètres d’URL', () => {
   });
 
   it('accepte aussi la forme séparée par des virgules', () => {
-    const { query } = parseSearchParams({ metier: 'banque-credit,assurance' });
-    expect(query.families).toEqual(['banque-credit', 'assurance']);
+    const { query } = parseSearchParams({ metier: 'banque-detail-credit,assurance-actuariat' });
+    expect(query.families).toEqual(['banque-detail-credit', 'assurance-actuariat']);
   });
 
   it('ignore les valeurs inventées', () => {
@@ -49,8 +49,8 @@ describe('lecture des paramètres d’URL', () => {
   });
 
   it('déduplique et borne la recherche libre', () => {
-    const { query } = parseSearchParams({ metier: ['assurance', 'assurance'], q: 'x'.repeat(500) });
-    expect(query.families).toEqual(['assurance']);
+    const { query } = parseSearchParams({ metier: ['assurance-actuariat', 'assurance-actuariat'], q: 'x'.repeat(500) });
+    expect(query.families).toEqual(['assurance-actuariat']);
     expect(query.q?.length).toBe(80);
   });
 

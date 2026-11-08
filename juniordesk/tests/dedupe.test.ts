@@ -12,7 +12,7 @@ function offer(overrides: Partial<Offer> & { id: string }): Offer {
     employer: { name: 'Banque', brand: null, siret: '12345678900011', website: null, size: null },
     place: { address: '', city: 'Paris', citySlug: 'paris', postalCode: '75002', departement: '75', lat: null, lon: null },
     contract: { kinds: ['apprentissage'], start: null, startIsFlexible: false, durationMonths: null, remote: null },
-    families: ['banque-credit'],
+    families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
     publishedAt: '2026-11-01T00:00:00.000Z',

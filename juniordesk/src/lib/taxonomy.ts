@@ -4,149 +4,295 @@
  * ---------------------------------------------------------------------------
  * Provenance des codes
  * ---------------------------------------------------------------------------
- * Les codes ci-dessous sont repris du Répertoire Opérationnel des Métiers et
- * des Emplois (ROME) de France Travail, **version 4.0 v62, publiée le
- * 19/10/2026**, diffusée en open data sous Licence Ouverte :
+ * Les codes ROME ci-dessous sont repris du Répertoire Opérationnel des Métiers
+ * et des Emplois de France Travail, **version 4.0 v62, publiée le 19/10/2026**,
+ * diffusée en open data sous Licence Ouverte :
  *
  *   https://www.data.gouv.fr/datasets/repertoire-operationnel-des-metiers-et-des-emplois-rome
  *
- * Ils n’ont pas été écrits de mémoire : chaque code a été relevé dans le
+ * Ils n'ont pas été écrits de mémoire : chaque code a été relevé dans le
  * fichier `unix_referentiel_code_rome_v462.json` du référentiel officiel, et
- * `tests/taxonomy.test.ts` vérifie que leur forme est valide, qu’aucun code
- * n’est affecté à deux familles, et qu’aucun code explicitement exclu ne s’est
- * glissé dans une famille.
+ * `tests/taxonomy.test.ts` vérifie leur forme, l'absence de doublon entre
+ * familles et l'absence de code explicitement exclu.
  *
  * ---------------------------------------------------------------------------
- * Pourquoi ROME ne suffit pas
+ * Deux chemins d'entrée, et pourquoi il en faut deux
  * ---------------------------------------------------------------------------
- * ROME décrit des métiers, pas des secteurs, et il est plus grossier que le
- * vocabulaire de la finance : il n’existe pas de code « M&A » distinct de
- * « gestion d’actifs », et une alternance en salle des marchés peut très bien
- * être codée « M1203 Comptable » par un employeur pressé.
+ * ROME décrit des métiers administratifs, pas les verticales de la finance.
+ * Il n'existe aucun code pour « private equity », « transaction services »,
+ * « banque d'investissement » ou « fintech » : ces métiers tombent tous dans
+ * des codes génériques comme M1201 « Analyste financier ». Une taxonomie
+ * fondée sur le seul ROME ne pourrait donc pas offrir ces familles, qui sont
+ * précisément celles qu'un étudiant en finance cherche.
  *
- * D’où deux portes d’entrée, et une porte de sortie :
+ * D'où deux chemins, qui s'additionnent :
  *
- *   1. le code ROME de l’offre appartient à une famille          -> retenue
- *   2. sinon, l’intitulé contient un terme franchement financier -> retenue
- *   3. dans les deux cas, un terme d’exclusion disqualifie       -> écartée
+ *   1. le code ROME de l'offre rattache à une famille ;
+ *   2. l'intitulé de l'offre rattache à une famille, par mots-clés propres à
+ *      cette verticale.
  *
- * La règle 3 n’est pas un détail : « assurance qualité » contient
- * « assurance », et « audit énergétique » contient « audit ». Sans liste
- * d’exclusions, un site d’offres finance se remplit de postes d’usine.
+ * Les deux s'appliquent TOUJOURS, et leurs résultats se cumulent. C'est le
+ * point important : une alternance « Analyste M&A » codée C1201 (clientèle
+ * bancaire) par un employeur pressé doit apparaître sous « Fusions-acquisitions »
+ * *et* sous « Banque de détail », pas seulement sous la seconde. Traiter les
+ * mots-clés comme un simple repli — ce qu'on faisait avant — rendait les
+ * verticales fines invisibles dès que l'offre portait un code ROME, c'est-à-dire
+ * presque toujours.
+ *
+ * Et une porte de sortie : un terme d'exclusion disqualifie l'offre, même si un
+ * code ROME du périmètre est présent. Sans elle, « assurance qualité » entre
+ * par le mot « assurance » et « audit énergétique » par le mot « audit ».
  */
 
 export interface JobFamily {
-  /** Forme URL, utilisée dans /metiers/[metier]. Ne jamais la changer : elle est indexée. */
+  /** Forme URL, utilisée dans /metiers/[metier]. */
   slug: string;
   label: string;
-  /** Phrase d’introduction de la page SEO du métier. */
+  /** Phrase d'introduction de la page SEO du métier. */
   intro: string;
-  /** Codes ROME 4.0 rattachés à cette famille. */
+  /** Codes ROME 4.0 rattachés. Peut être vide : voir `keywords`. */
   romeCodes: readonly string[];
+  /**
+   * Termes qui, dans un intitulé, rattachent l'offre à cette famille.
+   *
+   * Indispensables pour les verticales que ROME ne distingue pas. Chaque terme
+   * doit être propre au métier : « analyste » ou « gestion » seuls ramèneraient
+   * la moitié du marché du travail.
+   */
+  keywords: readonly string[];
 }
 
 /**
- * Les neuf familles du périmètre.
+ * Les familles du périmètre, dans l'ordre d'affichage.
  *
- * L’ordre est celui d’affichage : du plus gros gisement d’alternance au plus
- * étroit.
+ * L'ordre va des gisements les plus larges en alternance aux plus étroits,
+ * puis aux fonctions transverses.
  */
 export const JOB_FAMILIES: readonly JobFamily[] = [
   {
-    slug: 'banque-credit',
-    label: 'Banque et crédit',
+    slug: 'banque-detail-credit',
+    label: 'Banque de détail et crédit',
     intro:
-      'Réseau d’agence, clientèle de particuliers et de professionnels, analyse ' +
-      'de crédit, gestion de patrimoine. C’est le gisement d’alternance le plus ' +
-      'large du secteur financier.',
+      'Réseau d’agence, clientèle de particuliers et de professionnels, analyse et ' +
+      'octroi de crédit. C’est de loin le plus gros gisement d’alternance du secteur ' +
+      'financier, et souvent la porte d’entrée la plus accessible.',
     romeCodes: [
-      'C1201', 'C1202', 'C1203', 'C1204', 'C1205', 'C1206', 'C1207', 'C1208',
-      'C1209', 'C1210', 'C1211', 'C1212', 'C1213', 'C1214', 'C1215', 'C1216',
-      'C1217',
-      'M1220', // Credit manager
+      'C1201', 'C1202', 'C1203', 'C1204', 'C1206', 'C1207', 'C1208', 'C1209',
+      'C1210', 'C1211', 'C1212', 'C1213', 'C1214', 'C1215', 'C1216', 'C1217',
+      'M1220',
+    ],
+    keywords: [
+      'banque de detail', 'banque de reseau', 'charge de clientele bancaire',
+      'conseiller bancaire', 'credit manager', 'analyste credit', 'octroi de credit',
+      'credit immobilier', 'credit a la consommation', 'affacturage', 'leasing',
+      'credit bail',
     ],
   },
   {
-    slug: 'assurance',
-    label: 'Assurance',
+    slug: 'banque-privee-patrimoine',
+    label: 'Banque privée et gestion de patrimoine',
     intro:
-      'Souscription, indemnisation, courtage, actuariat, prévoyance. Les ' +
-      'assureurs et les courtiers recrutent en alternance à tous les niveaux de ' +
-      'diplôme.',
+      'Conseil aux clients fortunés, ingénierie patrimoniale, family office. ' +
+      'Des volumes plus faibles qu’en banque de détail, et une exigence plus forte ' +
+      'sur la fiscalité et le droit.',
+    romeCodes: ['C1205'],
+    keywords: [
+      'banque privee', 'gestion de patrimoine', 'conseiller patrimonial',
+      'ingenierie patrimoniale', 'wealth management', 'private banking',
+      'family office',
+    ],
+  },
+  {
+    slug: 'banque-investissement',
+    label: 'Banque d’investissement',
+    intro:
+      'Banque de financement et d’investissement : émissions d’actions et de dette, ' +
+      'financements structurés, couverture sectorielle. ROME ne distingue pas cette ' +
+      'activité : le rattachement se fait sur l’intitulé.',
+    romeCodes: [],
+    keywords: [
+      'banque d investissement', 'banque de financement', 'bfi', 'investment banking',
+      'corporate banking', 'ecm', 'dcm', 'equity capital markets', 'debt capital markets',
+      'leveraged finance', 'financement structure', 'financements structures',
+      'syndication', 'origination',
+    ],
+  },
+  {
+    slug: 'fusions-acquisitions',
+    label: 'Fusions-acquisitions (M&A)',
+    intro:
+      'Conseil en acquisition et cession d’entreprises. Le segment le plus demandé ' +
+      'et le plus sélectif : peu de places, beaucoup de candidats, et des process ' +
+      'de recrutement qui démarrent très tôt dans l’année.',
+    romeCodes: ['M1219'],
+    keywords: [
+      'm&a', 'fusion acquisition', 'fusions acquisitions', 'fusions et acquisitions',
+      'mergers acquisitions', 'mergers and acquisitions', 'conseil en acquisition',
+      'cession d entreprise', 'build up',
+    ],
+  },
+  {
+    slug: 'private-equity',
+    label: 'Private equity et capital-investissement',
+    intro:
+      'Fonds d’investissement, capital-risque, LBO, infrastructure. Comme pour la ' +
+      'banque d’investissement, ROME n’a pas de code propre : le rattachement passe ' +
+      'par l’intitulé.',
+    romeCodes: ['M1226'],
+    keywords: [
+      'private equity', 'capital investissement', 'capital risque', 'capital developpement',
+      'venture capital', 'lbo', 'fonds d investissement', 'societe de gestion',
+      'infrastructure fund', 'dette privee', 'growth equity',
+    ],
+  },
+  {
+    slug: 'marches-financiers',
+    label: 'Marchés financiers',
+    intro:
+      'Salle des marchés : négociation, structuration, vente de produits financiers. ' +
+      'Des équipes restreintes, et une forte concentration sur Paris La Défense.',
+    romeCodes: ['C1301', 'C1302', 'C1305', 'M1214'],
+    keywords: [
+      'marches financiers', 'salle des marches', 'trading', 'trader', 'sales trading',
+      'structuration', 'produits derives', 'derives actions', 'taux et change',
+      'front office', 'equity research', 'analyste actions',
+    ],
+  },
+  {
+    slug: 'gestion-actifs',
+    label: 'Gestion d’actifs',
+    intro:
+      'Gestion de portefeuille pour compte de tiers, OPCVM, gestion sous mandat, ' +
+      'investissement responsable. Les sociétés de gestion recrutent en alternance ' +
+      'surtout en support à la gestion et en reporting.',
+    romeCodes: ['C1303', 'C1304', 'C1306'],
+    keywords: [
+      'gestion d actifs', 'asset management', 'gestion de portefeuille', 'opcvm',
+      'gerant de portefeuille', 'multigestion', 'investissement responsable', 'esg',
+      'isr', 'reporting de gestion',
+    ],
+  },
+  {
+    slug: 'assurance-actuariat',
+    label: 'Assurance et actuariat',
+    intro:
+      'Souscription, indemnisation, courtage, actuariat, prévoyance. Les assureurs ' +
+      'et les courtiers recrutent en alternance à tous les niveaux de diplôme, du ' +
+      'BTS au master.',
     romeCodes: [
       'C1101', 'C1102', 'C1103', 'C1104', 'C1105', 'C1106', 'C1107', 'C1108',
       'C1109', 'C1110', 'C1111', 'C1112', 'C1113', 'C1114', 'C1115', 'C1116',
       'C1117', 'C1118', 'C1119', 'C1120', 'C1121', 'C1125', 'C1127', 'C1128',
       'C1129', 'C1130',
     ],
-  },
-  {
-    slug: 'marches-financiers',
-    label: 'Marchés financiers et gestion d’actifs',
-    intro:
-      'Salle des marchés, back et middle office, OPCVM, gestion de portefeuille. ' +
-      'Les volumes d’alternance y sont plus faibles qu’en banque de détail, et la ' +
-      'sélection plus serrée.',
-    romeCodes: [
-      'C1301', 'C1302', 'C1303', 'C1304', 'C1305', 'C1306',
-      'M1214', // Négociateur / Négociatrice en devises
+    keywords: [
+      'assurance', 'assureur', 'reassurance', 'courtage en assurance', 'courtier en assurance',
+      'actuariat', 'actuaire', 'souscription', 'souscripteur', 'sinistre', 'indemnisation',
+      'prevoyance', 'assurance vie', 'iard',
     ],
   },
   {
-    slug: 'audit-comptabilite',
-    label: 'Audit et comptabilité',
+    slug: 'audit',
+    label: 'Audit et commissariat aux comptes',
     intro:
-      'Cabinets d’audit et d’expertise comptable, commissariat aux comptes, ' +
-      'comptabilité d’entreprise. Les cabinets sont parmi les plus gros ' +
-      'recruteurs d’alternants du secteur.',
-    romeCodes: [
-      'M1202', // Auditeur comptable et financier
-      'M1203', // Comptable
-      'M1206', // Responsable comptabilité
-      'M1210', // Commissaire aux comptes
-      'M1211', // Expert-comptable
-      'M1213', // Assistant comptable
-      'M1215', // Contrôleur comptable et financier
-      'M1225', // Aide-comptable
+      'Audit légal et contractuel, commissariat aux comptes, audit interne. Les ' +
+      'cabinets sont parmi les plus gros recruteurs d’alternants du secteur, avec ' +
+      'des campagnes de recrutement très structurées.',
+    romeCodes: ['M1202', 'M1210', 'M1211'],
+    keywords: [
+      // « audit » et « auditeur » seuls sont admis, et ce n'est pas une
+      // imprudence : la liste d'exclusions est évaluée AVANT et écarte déjà
+      // l'audit qualité, énergétique, technique, environnemental, industriel
+      // et informatique. Les exiger en deux mots laissait passer à côté les
+      // offres de cabinet intitulées simplement « Alternance Audit », qui sont
+      // la forme la plus courante.
+      'audit', 'auditeur', 'auditrice',
+      'audit financier', 'audit legal', 'audit contractuel', 'audit interne',
+      'audit externe', 'auditeur financier', 'commissariat aux comptes',
+      'commissaire aux comptes', 'expertise comptable', 'expert comptable',
+    ],
+  },
+  {
+    slug: 'comptabilite',
+    label: 'Comptabilité',
+    intro:
+      'Comptabilité générale et auxiliaire, consolidation, clôtures. En cabinet ou ' +
+      'en entreprise, c’est le métier qui offre le plus d’alternances en volume ' +
+      'après la banque de détail.',
+    romeCodes: ['M1203', 'M1206', 'M1213', 'M1215', 'M1225'],
+    keywords: [
+      'comptabilite', 'comptable', 'aide comptable', 'consolidation', 'cloture comptable',
+      'comptabilite fournisseurs', 'comptabilite clients', 'normes ifrs',
     ],
   },
   {
     slug: 'controle-de-gestion',
     label: 'Contrôle de gestion',
     intro:
-      'Budgets, reporting, analyse des écarts, pilotage de la performance. Un ' +
-      'point d’entrée fréquent vers la direction financière.',
-    romeCodes: [
-      'M1204', // Contrôleur de gestion
-      'M1208', // Directeur du contrôle de gestion
-      'M1222', // Assistant de contrôle budgétaire
+      'Budgets, reporting, analyse des écarts, pilotage de la performance. Un point ' +
+      'd’entrée fréquent vers la direction financière, et une fonction présente dans ' +
+      'presque toutes les entreprises, bien au-delà du secteur financier.',
+    romeCodes: ['M1204', 'M1208', 'M1222'],
+    keywords: [
+      'controle de gestion', 'controleur de gestion', 'fp&a',
+      'financial planning', 'controle budgetaire', 'pilotage de la performance',
+      'reporting financier', 'business partner finance',
     ],
   },
   {
-    slug: 'corporate-finance',
-    label: 'Corporate finance et M&A',
+    slug: 'transaction-services',
+    label: 'Transaction services et évaluation',
     intro:
-      'Analyse financière, fusions et acquisitions, financement de projet, ' +
-      'investissement. Le segment le plus étroit et le plus demandé.',
-    romeCodes: [
-      'M1201', // Analyste financier
-      'M1205', // Directeur administratif et financier
-      'M1219', // Conseiller en fusion et acquisition
-      'M1221', // Responsable financement de projet
-      'M1223', // Chef des services administratifs et financiers
-      'M1224', // Économiste financier
-      'M1226', // Responsable investissements
+      'Due diligence financière, évaluation d’entreprise, restructuring. Une ' +
+      'activité de cabinet, souvent voisine de l’audit et du M&A, que ROME ne ' +
+      'distingue pas non plus.',
+    romeCodes: [],
+    keywords: [
+      'transaction services', 'transaction advisory', 'due diligence',
+      'valuation', 'evaluation d entreprise', 'evaluation financiere',
+      'financial advisory', 'restructuring', 'retournement', 'modelisation financiere',
+      'financial modelling',
     ],
   },
   {
-    slug: 'tresorerie-risques',
-    label: 'Trésorerie et risques',
+    slug: 'direction-financiere',
+    label: 'Direction financière',
     intro:
-      'Gestion de trésorerie, risques financiers, conformité. Des fonctions ' +
-      'qui se sont beaucoup étoffées depuis le durcissement réglementaire.',
-    romeCodes: [
-      'M1207', // Trésorier
-      'M1228', // Gestionnaire de risques financiers
+      'Analyse financière d’entreprise, pilotage, relations investisseurs. Les ' +
+      'fonctions de direction financière en entreprise, par opposition aux métiers ' +
+      'exercés chez un acteur financier.',
+    romeCodes: ['M1201', 'M1205', 'M1223', 'M1224'],
+    keywords: [
+      'direction financiere', 'daf', 'analyste financier', 'analyse financiere',
+      'relations investisseurs', 'investor relations', 'communication financiere',
+    ],
+  },
+  {
+    slug: 'tresorerie-financement',
+    label: 'Trésorerie et financement',
+    intro:
+      'Gestion de trésorerie, financement de projet, relations bancaires. Des ' +
+      'équipes réduites, mais une fonction qui s’est beaucoup développée depuis la ' +
+      'remontée des taux.',
+    romeCodes: ['M1207', 'M1221'],
+    keywords: [
+      'tresorerie', 'tresorier', 'cash management', 'financement de projet',
+      'project finance', 'relations bancaires', 'gestion de la dette',
+    ],
+  },
+  {
+    slug: 'risques-conformite',
+    label: 'Risques et conformité',
+    intro:
+      'Gestion des risques, conformité réglementaire, lutte anti-blanchiment, ' +
+      'contrôle interne. Le durcissement réglementaire en a fait l’une des ' +
+      'fonctions qui recrutent le plus régulièrement.',
+    romeCodes: ['M1228'],
+    keywords: [
+      'gestion des risques', 'risques financiers', 'risk management', 'risque de credit',
+      'risque operationnel', 'risque de marche', 'conformite', 'compliance',
+      'kyc', 'lcb ft', 'lutte anti blanchiment', 'blanchiment', 'controle interne',
+      'deontologie', 'controle permanent',
     ],
   },
   {
@@ -154,21 +300,39 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     label: 'Fiscalité',
     intro:
       'Fiscalité d’entreprise et des particuliers, en cabinet ou en direction ' +
-      'fiscale. Peu d’offres, souvent à bac+5.',
-    romeCodes: [
-      'K1911', // Fiscaliste
+      'fiscale. Peu d’offres, souvent à bac+5, et une forte proportion de profils ' +
+      'venus du droit.',
+    romeCodes: ['K1911'],
+    keywords: [
+      'fiscalite', 'fiscaliste', 'droit fiscal', 'fiscalite internationale',
+      'prix de transfert', 'tva', 'contentieux fiscal',
     ],
   },
   {
-    slug: 'back-office-banque-assurance',
-    label: 'Back-office banque et assurance',
+    slug: 'fintech-paiements',
+    label: 'Fintech et paiements',
     intro:
-      'Gestion administrative des contrats et des opérations, régimes de ' +
-      'retraite complémentaire, fonctions techniques bancaires.',
-    romeCodes: [
-      'C1401', // Agent administratif banque ou assurance
-      'C1402', // Agent technique des régimes de retraite complémentaire et de prévoyance
-      'C1403', // Cadre technique de la banque
+      'Néobanques, paiement, monétique, assurtech, actifs numériques. Un secteur ' +
+      'jeune, sans code métier dédié, où les intitulés mélangent finance et ' +
+      'technologie.',
+    romeCodes: [],
+    keywords: [
+      'fintech', 'insurtech', 'regtech', 'neobanque', 'paiement', 'monetique',
+      'moyens de paiement', 'open banking', 'actifs numeriques', 'crypto actifs',
+      'blockchain finance',
+    ],
+  },
+  {
+    slug: 'back-office',
+    label: 'Back-office et middle-office',
+    intro:
+      'Traitement post-marché, conservation de titres, gestion administrative des ' +
+      'contrats et des opérations. Moins exposé que le front-office, et souvent ' +
+      'plus accessible en alternance.',
+    romeCodes: ['C1401', 'C1402', 'C1403'],
+    keywords: [
+      'back office', 'middle office', 'post marche', 'conservation de titres',
+      'custody', 'depositaire', 'reglement livraison', 'gestion administrative des contrats',
     ],
   },
 ];
@@ -176,11 +340,10 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
 /**
  * Codes ROME délibérément HORS périmètre, avec la raison.
  *
- * Ce tableau n’est pas de la documentation : `matchFamilies()` s’en sert comme
- * d’un garde-fou, et le test de taxonomie échoue si l’un de ces codes
- * réapparaît dans une famille. Sans cela, une bonne intention lors d’une
- * future modification suffirait à faire entrer l’immobilier dans un site
- * d’offres finance.
+ * Ce tableau n'est pas de la documentation : `matchFamilies()` s'en sert comme
+ * garde-fou, et le test de taxonomie échoue si l'un de ces codes réapparaît
+ * dans une famille. Sans cela, une bonne intention lors d'une modification
+ * future suffirait à faire entrer l'immobilier dans un site d'offres finance.
  */
 export const EXCLUDED_ROME: readonly { code: string; reason: string }[] = [
   { code: 'C1501', reason: 'Immobilier — hors périmètre' },
@@ -206,51 +369,33 @@ export const EXCLUDED_ROME: readonly { code: string; reason: string }[] = [
 const EXCLUDED_SET: ReadonlySet<string> = new Set(EXCLUDED_ROME.map((e) => e.code));
 
 /**
- * Termes qui, dans un intitulé, suffisent à retenir une offre même si son code
- * ROME est générique ou absent.
+ * Termes qui disqualifient une offre, même si un mot-clé ou un code du
+ * périmètre est présent.
  *
- * Volontairement spécifiques. « gestion » ou « analyste » seuls ramèneraient la
- * moitié du marché du travail.
- */
-const INCLUDE_KEYWORDS: readonly string[] = [
-  'finance', 'financier', 'financiere',
-  'banque', 'bancaire', 'banque privee', 'banque d investissement',
-  'assurance', 'assureur', 'courtage', 'courtier', 'actuariat', 'actuaire',
-  'prevoyance', 'souscription', 'sinistre', 'indemnisation',
-  'comptabilite', 'comptable', 'expertise comptable', 'commissariat aux comptes',
-  'consolidation', 'reporting financier', 'cloture comptable',
-  'audit interne', 'audit externe', 'audit financier', 'auditeur financier',
-  'controle de gestion', 'controleur de gestion', 'controle interne',
-  'tresorerie', 'tresorier', 'cash management',
-  'fiscalite', 'fiscaliste', 'fiscal',
-  'fusion acquisition', 'fusions acquisitions', 'm&a', 'corporate finance',
-  'private equity', 'capital investissement', 'capital risque',
-  'gestion d actifs', 'asset management', 'gestion de portefeuille',
-  'opcvm', 'marches financiers', 'salle des marches', 'trading', 'trader',
-  'front office', 'middle office', 'back office',
-  'gestion de patrimoine', 'conseiller patrimonial',
-  'credit', 'analyste credit', 'risque de credit', 'credit manager',
-  'risques financiers', 'gestion des risques',
-  'conformite', 'compliance', 'kyc', 'lcb ft', 'lutte anti blanchiment',
-  'leasing', 'affacturage', 'factoring',
-];
-
-/**
- * Termes qui disqualifient une offre, même si un mot-clé d’inclusion est
- * présent.
- *
- * Chaque ligne vient d’un faux positif réel ou évident : « assurance qualité »
- * est un métier d’usine, « audit énergétique » un métier du bâtiment, et un
- * « conseiller en immobilier » n’a rien à faire ici.
+ * Chaque ligne vient d'un faux positif évident : « assurance qualité » est un
+ * métier d'usine, « audit énergétique » un métier du bâtiment, « moyens de
+ * paiement » peut désigner un poste de caissier.
  */
 const EXCLUDE_KEYWORDS: readonly string[] = [
-  'assurance qualite', 'assurance produit', 'ingenieur qualite',
+  'assurance qualite', 'assurance produit', 'ingenieur qualite', 'responsable qualite',
   'audit qualite', 'auditeur qualite', 'audit energetique', 'audit technique',
-  'audit environnemental', 'audit de securite', 'audit industriel',
+  'audit environnemental', 'audit de securite', 'audit industriel', 'audit informatique',
   'immobilier', 'immobiliere', 'syndic', 'copropriete', 'gestion locative',
   'assurance maladie', 'securite sociale', 'caisse d allocations',
   'controle technique', 'controleur technique',
+  'hote de caisse', 'hotesse de caisse', 'encaissement',
   'credit photo', 'credit image',
+];
+
+/**
+ * Termes financiers génériques.
+ *
+ * Servent de dernier recours : une offre sans code ROME utile et sans mot-clé
+ * de verticale, mais dont l'intitulé est manifestement financier, est retenue
+ * et rattachée à la direction financière plutôt que perdue.
+ */
+const GENERIC_FINANCE_KEYWORDS: readonly string[] = [
+  'finance', 'financier', 'financiere', 'banque', 'bancaire',
 ];
 
 /** Normalise pour comparaison : minuscules, sans accent, ponctuation en espaces. */
@@ -279,30 +424,38 @@ export function allFamilySlugs(): string[] {
   return JOB_FAMILIES.map((f) => f.slug);
 }
 
-/** Vrai si l’intitulé porte un terme d’exclusion. */
+/** Vrai si l'intitulé porte un terme d'exclusion. */
 export function isExcludedByKeyword(title: string): boolean {
   const folded = fold(title);
   return EXCLUDE_KEYWORDS.some((kw) => folded.includes(fold(kw)));
 }
 
-/** Vrai si l’intitulé porte un terme franchement financier. */
+/**
+ * Vrai si l'intitulé porte un terme financier, de verticale ou générique.
+ *
+ * Utilisé pour décider si une offre sans code ROME exploitable mérite d'être
+ * retenue.
+ */
 export function hasFinanceKeyword(title: string): boolean {
-  const folded = ` ${fold(title)} `;
-  return INCLUDE_KEYWORDS.some((kw) => folded.includes(` ${fold(kw)} `));
+  const padded = ` ${fold(title)} `;
+  if (GENERIC_FINANCE_KEYWORDS.some((kw) => padded.includes(` ${fold(kw)} `))) return true;
+  return JOB_FAMILIES.some((family) =>
+    family.keywords.some((kw) => padded.includes(` ${fold(kw)} `)),
+  );
 }
 
 export interface MatchResult {
-  /** Familles retenues, dans l’ordre de `JOB_FAMILIES`. */
+  /** Familles retenues, dans l'ordre de `JOB_FAMILIES`. */
   families: string[];
-  /** Comment l’offre est entrée dans le périmètre. Utile pour le diagnostic. */
-  via: 'rome' | 'keyword' | null;
+  /** Comment l'offre est entrée dans le périmètre. Utile au diagnostic. */
+  via: 'rome' | 'keyword' | 'both' | null;
 }
 
 /**
  * Détermine si une offre entre dans le périmètre finance, et sous quelles
  * familles.
  *
- * `families` vide signifie « hors périmètre » : la collecte écarte l’offre.
+ * `families` vide signifie « hors périmètre » : la collecte écarte l'offre.
  */
 export function matchFamilies(input: {
   title: string;
@@ -310,52 +463,42 @@ export function matchFamilies(input: {
 }): MatchResult {
   if (isExcludedByKeyword(input.title)) return { families: [], via: null };
 
-  const slugs = new Set<string>();
+  const fromRome = new Set<string>();
   for (const code of input.romeCodes) {
     const upper = code.trim().toUpperCase();
     if (EXCLUDED_SET.has(upper)) continue;
     const slug = FAMILY_BY_ROME.get(upper);
-    if (slug) slugs.add(slug);
+    if (slug) fromRome.add(slug);
   }
 
-  if (slugs.size > 0) {
-    return { families: ordered(slugs), via: 'rome' };
+  // Les mots-clés s'appliquent toujours, pas seulement en l'absence de code.
+  // C'est ce qui rend visibles les verticales que ROME ne distingue pas.
+  const padded = ` ${fold(input.title)} `;
+  const fromKeyword = new Set<string>();
+  for (const family of JOB_FAMILIES) {
+    if (family.keywords.some((kw) => padded.includes(` ${fold(kw)} `))) {
+      fromKeyword.add(family.slug);
+    }
   }
 
-  // Aucun code ROME utile : on se rabat sur l’intitulé. On ne devine pas la
-  // famille dans ce cas — on la déduit du mot-clé qui a déclenché la prise.
-  if (hasFinanceKeyword(input.title)) {
-    const guessed = guessFamilyFromTitle(input.title);
-    return { families: guessed ? [guessed] : ['banque-credit'], via: 'keyword' };
+  const all = new Set([...fromRome, ...fromKeyword]);
+
+  if (all.size === 0) {
+    // Rien de précis, mais un intitulé manifestement financier : on retient
+    // plutôt que de perdre l'offre, et on la range par défaut en direction
+    // financière, la famille la plus transverse.
+    if (GENERIC_FINANCE_KEYWORDS.some((kw) => padded.includes(` ${fold(kw)} `))) {
+      return { families: ['direction-financiere'], via: 'keyword' };
+    }
+    return { families: [], via: null };
   }
 
-  return { families: [], via: null };
+  const via: MatchResult['via'] =
+    fromRome.size > 0 && fromKeyword.size > 0 ? 'both' : fromRome.size > 0 ? 'rome' : 'keyword';
+
+  return { families: ordered(all), via };
 }
 
 function ordered(slugs: ReadonlySet<string>): string[] {
   return JOB_FAMILIES.filter((f) => slugs.has(f.slug)).map((f) => f.slug);
-}
-
-/**
- * Rattachement de secours, par mot-clé le plus spécifique trouvé dans
- * l’intitulé. Imparfait par construction, et c’est assumé : mieux vaut une
- * offre finance rangée dans la famille voisine qu’une offre finance absente.
- */
-function guessFamilyFromTitle(title: string): string | null {
-  const folded = fold(title);
-  const rules: readonly [string, readonly string[]][] = [
-    ['corporate-finance', ['fusion', 'acquisition', 'm&a', 'corporate finance', 'private equity', 'capital investissement', 'capital risque', 'analyste financier']],
-    ['marches-financiers', ['marches financiers', 'salle des marches', 'trading', 'trader', 'opcvm', 'asset management', 'gestion d actifs', 'gestion de portefeuille', 'front office', 'middle office']],
-    ['audit-comptabilite', ['audit', 'auditeur', 'comptab', 'commissariat aux comptes', 'consolidation', 'cloture']],
-    ['controle-de-gestion', ['controle de gestion', 'controleur de gestion', 'controle interne', 'budgetaire']],
-    ['tresorerie-risques', ['tresorerie', 'tresorier', 'cash management', 'risques financiers', 'gestion des risques', 'conformite', 'compliance', 'kyc', 'lcb ft', 'blanchiment']],
-    ['fiscalite', ['fiscalite', 'fiscaliste', 'fiscal']],
-    ['assurance', ['assurance', 'assureur', 'courtage', 'courtier', 'actuar', 'prevoyance', 'souscription', 'sinistre', 'indemnisation']],
-    ['banque-credit', ['banque', 'bancaire', 'credit', 'patrimoine', 'leasing', 'affacturage', 'factoring']],
-    ['back-office-banque-assurance', ['back office']],
-  ];
-  for (const [slug, keywords] of rules) {
-    if (keywords.some((kw) => folded.includes(fold(kw)))) return slug;
-  }
-  return null;
 }
