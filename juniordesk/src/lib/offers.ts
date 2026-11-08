@@ -15,6 +15,7 @@ if (typeof window !== 'undefined') {
   );
 }
 
+import { cache } from 'react';
 import type { Offer } from './offer';
 import { isLive } from './offer';
 import { collect } from './collect';
@@ -25,6 +26,11 @@ import { hasRealSource } from './sources';
 /**
  * Instantané courant.
  *
+ * Enveloppé dans `cache()` de React : au sein d'une même requête, la page et
+ * son `generateMetadata` lisent le magasin une seule fois. Sans cela, chaque
+ * page paginée le lisait deux fois — une pour savoir combien il y a de pages,
+ * une pour les afficher.
+ *
  * Si le magasin est vide — première exécution, développement local, mémoire
  * perdue au redémarrage — on collecte à la demande une seule fois plutôt que
  * d’afficher une page vide. En production, c’est la tâche planifiée qui
@@ -32,7 +38,7 @@ import { hasRealSource } from './sources';
  * il est protégé par un verrou pour qu’un pic de trafic sur un magasin vide ne
  * déclenche pas vingt collectes simultanées.
  */
-export async function getSnapshot(): Promise<Snapshot> {
+export const getSnapshot = cache(async function getSnapshot(): Promise<Snapshot> {
   const store = getStore();
   const existing = await store.getSnapshot();
   if (existing && existing.offers.length > 0) return existing;
@@ -46,7 +52,7 @@ export async function getSnapshot(): Promise<Snapshot> {
   await collect();
   const fresh = await store.getSnapshot();
   return fresh ?? { collectedAt: new Date().toISOString(), offers: [], sources: [], warnings: [] };
-}
+});
 
 /** Offres encore valides, toutes familles et toutes villes. */
 export async function getLiveOffers(now: Date = new Date()): Promise<Offer[]> {

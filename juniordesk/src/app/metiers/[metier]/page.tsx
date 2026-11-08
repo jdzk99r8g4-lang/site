@@ -7,6 +7,8 @@ import { applyQuery, buildFacets } from '@/lib/filters';
 import { CONTRACT_GROUP_PLURALS, toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
 import { JOB_FAMILIES, familyBySlug } from '@/lib/taxonomy';
+import { paginate, parsePageParam } from '@/lib/pagination';
+import { PageCount, Pager } from '@/components/pager';
 import { OfferCard } from '@/components/offer-card';
 import { DemoBanner } from '@/components/demo-banner';
 import { cityIndex } from '@/lib/geo';
@@ -22,24 +24,52 @@ export function generateStaticParams() {
   return JOB_FAMILIES.map((family) => ({ metier: family.slug }));
 }
 
+/*
+ * Les métadonnées dépendent du numéro de page, pour deux raisons.
+ *
+ * La canonique d'abord : la donner sans le numéro reviendrait à dire qu'il
+ * n'existe qu'une page et que les offres des suivantes ne sont nulle part.
+ * Chaque page désigne donc sa propre adresse.
+ *
+ * Le refus d'indexation ensuite : un numéro trop grand sert quand même la
+ * dernière page — renvoyer une erreur n'aiderait personne — mais il ne doit
+ * pas entrer dans l'index, sinon un moteur référencerait autant d'adresses
+ * que de numéros inventés, toutes avec le même contenu.
+ */
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ metier: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { metier } = await params;
   const family = familyBySlug(metier);
   if (!family) return { title: 'Métier introuvable' };
 
+  const requestedPage = parsePageParam((await searchParams)['page']);
+  const offers = applyQuery(await getLiveOffers(), { families: [family.slug] });
+  const { page, clamped } = paginate(offers, requestedPage);
+  const base = `/metiers/${family.slug}`;
+
   return {
-    title: `Alternance ${family.label}`,
+    title: page > 1 ? `Alternance ${family.label} — page ${page}` : `Alternance ${family.label}`,
     description: `${family.intro} Toutes les offres d’alternance ${family.label.toLowerCase()} collectées automatiquement.`,
-    alternates: { canonical: `/metiers/${family.slug}` },
+    alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
+    ...(clamped && requestedPage !== 1 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
-export default async function JobFamilyPage({ params }: { params: Promise<{ metier: string }> }) {
+export default async function JobFamilyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ metier: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { metier } = await params;
+  const search = await searchParams;
+  const requestedPage = parsePageParam(search['page']);
   const family = familyBySlug(metier);
   if (!family) notFound();
 
@@ -47,6 +77,7 @@ export default async function JobFamilyPage({ params }: { params: Promise<{ meti
   const offers = applyQuery(all, { families: [family.slug] });
   const facets = buildFacets(offers, activeContractGroups());
   const cities = cityIndex(offers.map((o) => o.place)).slice(0, 12);
+  const paged = paginate(offers, requestedPage);
 
   return (
     <>
@@ -90,12 +121,21 @@ export default async function JobFamilyPage({ params }: { params: Promise<{ meti
           </ul>
         ) : null}
 
-        {offers.length > 0 ? (
-          <div className="mt-7 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
-            {offers.map((offer) => (
-              <OfferCard key={offer.id} offer={toPublicOffer(offer)} />
-            ))}
-          </div>
+        {paged.items.length > 0 ? (
+          <>
+            <PageCount from={paged.from} to={paged.to} total={paged.total} />
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+              {paged.items.map((offer) => (
+                <OfferCard key={offer.id} offer={toPublicOffer(offer)} />
+              ))}
+            </div>
+            <Pager
+              basePath={`/metiers/${family.slug}`}
+              params={search}
+              page={paged.page}
+              pageCount={paged.pageCount}
+            />
+          </>
         ) : (
           <div className="mt-7 rounded-card border border-line bg-card p-6">
             <p className="font-bold">Aucune offre {family.label.toLowerCase()} en ligne.</p>

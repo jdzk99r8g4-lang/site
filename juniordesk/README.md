@@ -64,7 +64,7 @@ Pour régénérer le verrou : `npx npm@12 install`.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
-| `npm test` | 186 tests unitaires |
+| `npm test` | 208 tests unitaires |
 | `npm run typecheck` | TypeScript en mode strict |
 | `npm run collect` | Collecte manuelle, avec rapport détaillé — n'envoie aucun e-mail |
 | `npm run verify` | Les trois premiers, à lancer avant tout déploiement |
@@ -125,7 +125,7 @@ src/
     └── …               Pages publiques
 ```
 
-### Cinq décisions structurantes
+### Six décisions structurantes
 
 **1. Aucune page ne connaît aucune source.** Chaque adaptateur produit du
 `Offer` normalisé ; la source la plus importante du projet a fermé du jour au
@@ -166,6 +166,23 @@ liste d'exclusions explicite qui tient l'immobilier et la qualité industrielle
 à l'écart — sans elle, « assurance qualité » et « audit énergétique »
 rempliraient le site de postes d'usine.
 
+**6. Les listes sont paginées par l'URL, pas par un bouton « voir plus ».**
+Mesuré sur le jeu de démonstration : 128 Ko de HTML pour vingt offres, soit
+environ 6,4 Ko par offre, donc une page de l'ordre de 12 Mo à deux mille
+offres. Vingt-quatre offres par page (`OFFERS_PER_PAGE`), et chaque page a sa
+propre adresse : elle se partage, se met en favori, fonctionne sans
+JavaScript comme le reste des filtres, et se parcourt. Un bouton « voir plus »
+laisse tout ce qui suit la première fournée hors de portée d'un moteur.
+
+Deux détails de référencement qui paraissent mineurs et ne le sont pas. Chaque
+page porte sa **propre** canonique, numéro compris : canoniser la page 2 vers
+la page 1 dirait aux moteurs que les offres de la page 2 ne sont nulle part. Et
+une combinaison de filtres (`/offres?metier=…`) est marquée `noindex, follow`
+et ne porte **aucune** canonique : les adresses à référencer existent déjà sous
+`/metiers/…`, `/villes/…` et `/regions/…`, et donner pour canonique à une page
+filtrée la page non filtrée de même numéro serait faux — une canonique doit
+désigner une adresse qui porte le même contenu.
+
 ---
 
 ## Configuration
@@ -181,6 +198,7 @@ Tout est dans `.env.example`, commenté ligne par ligne.
 | `ALERTS_SECRET` | Signe les liens d'alerte et de compte | **en production** |
 | `GOOGLE_CLIENT_ID` / `_SECRET` | Bouton « Continuer avec Google » | facultatif |
 | `EMAIL_HOURLY_CAP` | Plafond horaire d'e-mails déclenchés par un visiteur (200) | facultatif |
+| `OFFERS_PER_PAGE` | Offres par page de liste (24) | facultatif |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Envoi des alertes | pour notifier |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | `true` le jour du lancement seulement | — |
 

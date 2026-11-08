@@ -7,6 +7,8 @@ import { toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
 import { cityIndex } from '@/lib/geo';
 import { JOB_FAMILIES } from '@/lib/taxonomy';
+import { paginate, parsePageParam } from '@/lib/pagination';
+import { PageCount, Pager } from '@/components/pager';
 import { OfferCard } from '@/components/offer-card';
 import { DemoBanner } from '@/components/demo-banner';
 
@@ -30,30 +32,60 @@ async function resolveCity(slug: string) {
   return { offers, label };
 }
 
+/*
+ * Les métadonnées dépendent du numéro de page, pour deux raisons.
+ *
+ * La canonique d'abord : la donner sans le numéro reviendrait à dire qu'il
+ * n'existe qu'une page et que les offres des suivantes ne sont nulle part.
+ * Chaque page désigne donc sa propre adresse.
+ *
+ * Le refus d'indexation ensuite : un numéro trop grand sert quand même la
+ * dernière page — renvoyer une erreur n'aiderait personne — mais il ne doit
+ * pas entrer dans l'index, sinon un moteur référencerait autant d'adresses
+ * que de numéros inventés, toutes avec le même contenu.
+ */
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ ville: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { ville } = await params;
   const found = await resolveCity(ville);
   if (!found) return { title: 'Ville introuvable' };
 
+  const requestedPage = parsePageParam((await searchParams)['page']);
+  const { page, clamped } = paginate(found.offers, requestedPage);
+  const base = `/villes/${ville}`;
+
   return {
-    title: `Alternance finance à ${found.label}`,
+    title:
+      page > 1
+        ? `Alternance finance à ${found.label} — page ${page}`
+        : `Alternance finance à ${found.label}`,
     description:
       `${found.offers.length} offre${found.offers.length === 1 ? '' : 's'} d’alternance en ` +
       `finance à ${found.label} : banque, assurance, audit, comptabilité, contrôle de gestion.`,
-    alternates: { canonical: `/villes/${ville}` },
+    alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
+    ...(clamped && requestedPage !== 1 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
-export default async function CityPage({ params }: { params: Promise<{ ville: string }> }) {
+export default async function CityPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ville: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { ville } = await params;
+  const search = await searchParams;
   const found = await resolveCity(ville);
   if (!found) notFound();
 
   const facets = buildFacets(found.offers, activeContractGroups());
+  const paged = paginate(found.offers, parsePageParam(search['page']));
 
   return (
     <>
@@ -93,11 +125,18 @@ export default async function CityPage({ params }: { params: Promise<{ ville: st
           </ul>
         ) : null}
 
-        <div className="mt-7 grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
-          {found.offers.map((offer) => (
+        <PageCount from={paged.from} to={paged.to} total={paged.total} />
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+          {paged.items.map((offer) => (
             <OfferCard key={offer.id} offer={toPublicOffer(offer)} />
           ))}
         </div>
+        <Pager
+          basePath={`/villes/${ville}`}
+          params={search}
+          page={paged.page}
+          pageCount={paged.pageCount}
+        />
 
         <p className="mt-8 text-sm text-muted">
           <Link href={`/alertes?ville=${ville}`} className="text-accent">

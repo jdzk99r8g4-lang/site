@@ -12,6 +12,7 @@ import { CONTRACT_GROUPS } from './offer';
 import type { OfferQuery, SortKey } from './filters';
 import { allFamilySlugs } from './taxonomy';
 import { REGIONS } from './regions';
+import { parsePageParam } from './pagination';
 import { slugify } from './slug';
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -32,6 +33,8 @@ function one(value: string | string[] | undefined): string {
 
 export interface ParsedQuery {
   query: OfferQuery;
+  /** Page demandée, au moins 1. Bornée plus tard, une fois le total connu. */
+  page: number;
   /** Valeurs à réinjecter dans le formulaire, déjà nettoyées. */
   selected: {
     families: string[];
@@ -81,7 +84,15 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
   const rawDate = one(params['debut_avant']);
   const startsBefore = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : '';
 
+  /*
+   * Le numéro de page n'entre pas dans `query` : il ne filtre rien, il
+   * découpe le résultat. Le mélanger aux filtres ferait croire à la page
+   * d'offres qu'un filtre est actif dès la page 2.
+   */
+  const page = parsePageParam(params['page']);
+
   return {
+    page,
     query: {
       families,
       groups,
@@ -93,4 +104,27 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
     },
     selected: { families, groups, cities, regions, q, sort, startsBefore },
   };
+}
+
+/**
+ * Un filtre au moins est-il actif ?
+ *
+ * Mutualisé parce que deux endroits en ont besoin et doivent répondre la même
+ * chose : la page, pour annoncer « 8 offres sur 20 » plutôt que « 8 offres »,
+ * et ses métadonnées, pour refuser l'indexation d'une combinaison de filtres.
+ * Quand la liste des critères a grossi, une copie a oublié `regions` et la
+ * page a affiché « 8 offres » en masquant qu'elle filtrait : une seule
+ * définition évite que cela se reproduise.
+ *
+ * `sort` n'en fait pas partie : trier ne retire aucune offre.
+ */
+export function hasActiveFilters(selected: ParsedQuery['selected']): boolean {
+  return (
+    selected.families.length > 0 ||
+    selected.groups.length > 0 ||
+    selected.cities.length > 0 ||
+    selected.regions.length > 0 ||
+    selected.q.length > 0 ||
+    selected.startsBefore.length > 0
+  );
 }
