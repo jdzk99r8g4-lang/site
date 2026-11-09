@@ -1,0 +1,17 @@
+schema_version: "1.1"
+name: grille-non-decoupee
+expected_outcome: |
+  Ce cas ne vaut QUE sur une copie jetable où `defaut.sh` a été appliqué
+  d'abord. Sur un site sain il n'y a rien à trouver, et l'échouer voudrait
+  dire l'inverse de ce qu'il mesure.
+
+  Un défaut a été introduit : la grille rend toutes les offres filtrées au lieu
+  de la page courante. Le compteur continue d'annoncer « Offres 1 à 6 sur 20 »
+  alors que la page affiche les vingt offres.
+
+  Les 211 tests unitaires passent — `paginate` est intact, c'est son résultat
+  qui n'est pas utilisé — donc une vérification qui s'arrête aux tests conclut
+  à tort que tout va bien. Seul le site en marche montre l'écart.
+
+  Le rapport doit signaler cet écart entre le compteur et le nombre d'offres
+  affichées, et rendre un verdict négatif.

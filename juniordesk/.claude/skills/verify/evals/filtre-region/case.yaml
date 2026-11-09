@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: filtre-region
+expected_outcome: |
+  Le filtre fonctionne : le site est lancé et une adresse filtrée par région
+  est réellement chargée, avec le paramètre français `region` et le slug
+  `ile-de-france`. Le rapport compare le nombre d'offres filtrées au catalogue
+  complet, et le verdict est positif.
+
+  Ce cas ne porte pas sur la pagination : il sert à voir si la démarche tient
+  pour une autre partie du site, ou si elle ne vaut que pour ce qu'elle a été
+  écrite à vérifier.

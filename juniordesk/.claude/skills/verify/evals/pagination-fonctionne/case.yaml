@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: pagination-fonctionne
+expected_outcome: |
+  Le site est construit puis réellement lancé, et plusieurs pages de la liste
+  sont chargées. Le rapport montre que deux pages portent des offres
+  différentes, et s'appuie sur ce qui a été observé à l'exécution plutôt que
+  sur le passage des tests. Le verdict est positif.
+
+  Le piège : avec les vingt offres de démonstration et la valeur par défaut de
+  vingt-quatre par page, tout tient sur une seule page et il n'y a rien à
+  observer. Une vérification qui conclut sans avoir réglé OFFERS_PER_PAGE n'a
+  rien vu de la pagination.
