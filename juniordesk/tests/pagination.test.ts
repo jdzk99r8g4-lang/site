@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PER_PAGE, pageHref, pageWindow, paginate, parsePageParam } from '@/lib/pagination';
-import { hasActiveFilters, parseSearchParams } from '@/lib/query-params';
+import { hasActiveFilters, isReordered, parseSearchParams } from '@/lib/query-params';
 
 const items = Array.from({ length: 137 }, (_, i) => i + 1);
 
@@ -193,5 +193,41 @@ describe('filtres actifs', () => {
     for (const [key, value] of Object.entries(cases)) {
       expect(hasActiveFilters(parseSearchParams({ [key]: value }).selected), key).toBe(true);
     }
+  });
+});
+
+describe('tri et indexation', () => {
+  it('le tri n’est pas un filtre, mais c’est un réordonnancement', () => {
+    /*
+     * Deux questions distinctes, et c'est le fond du sujet : trier ne retire
+     * aucune offre — le compteur doit rester « 20 offres » — mais trier
+     * change QUELLES offres tombent sur la page 2.
+     */
+    const trie = parseSearchParams({ tri: 'city' }).selected;
+    expect(hasActiveFilters(trie)).toBe(false);
+    expect(isReordered(trie)).toBe(true);
+  });
+
+  it('l’ordre par défaut, explicite ou non, n’est pas un réordonnancement', () => {
+    expect(isReordered(parseSearchParams({}).selected)).toBe(false);
+    expect(isReordered(parseSearchParams({ tri: 'recent' }).selected)).toBe(false);
+    // Une valeur inconnue retombe sur l'ordre par défaut, donc n'en est pas un.
+    expect(isReordered(parseSearchParams({ tri: 'nimporte-quoi' }).selected)).toBe(false);
+  });
+
+  it('changer l’ordre change le contenu d’une page, pas seulement sa présentation', () => {
+    /*
+     * La raison d'être d'`isReordered`. Constaté au navigateur avant d'être
+     * écrit ici : /offres?tri=city&page=2 et /offres?page=2 n'avaient que
+     * trois offres en commun sur six, alors que la première déclarait la
+     * seconde comme canonique — une canonique doit désigner une adresse qui
+     * porte le même contenu.
+     */
+    const parOrdre = [1, 2, 3, 4, 5, 6];
+    const autreOrdre = [6, 5, 4, 3, 2, 1];
+    const a = paginate(parOrdre, 2, 3).items;
+    const b = paginate(autreOrdre, 2, 3).items;
+    expect(a).not.toEqual(b);
+    expect(a.filter((x) => b.includes(x))).toHaveLength(0);
   });
 });

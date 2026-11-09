@@ -5,7 +5,7 @@ import { getLiveOffers, isDemoMode } from '@/lib/offers';
 import { applyQuery, buildFacets } from '@/lib/filters';
 import { toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
-import { hasActiveFilters, parseSearchParams } from '@/lib/query-params';
+import { hasActiveFilters, isReordered, parseSearchParams } from '@/lib/query-params';
 import { paginate } from '@/lib/pagination';
 import { PageCount, Pager } from '@/components/pager';
 import { OfferCard } from '@/components/offer-card';
@@ -50,7 +50,13 @@ export async function generateMetadata({
   const results = applyQuery(await getLiveOffers(), query);
   const { page, clamped } = paginate(results, requestedPage);
 
-  const filtered = hasActiveFilters(selected);
+  /*
+   * Le tri compte ici autant qu'un filtre, bien qu'il ne retire aucune offre :
+   * il change quelles offres tombent sur la page 2. Mesuré sur le jeu de
+   * démonstration, `/offres?tri=city&page=2` et `/offres?page=2` n'ont que
+   * trois offres en commun sur six.
+   */
+  const filtered = hasActiveFilters(selected) || isReordered(selected);
   /*
    * Un numéro de page inventé sert quand même la dernière page, mais ne doit
    * pas être indexé : sinon un moteur référencerait autant d'adresses que de

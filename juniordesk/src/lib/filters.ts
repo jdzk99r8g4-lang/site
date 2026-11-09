@@ -39,6 +39,9 @@ export interface OfferQuery {
 
 export type SortKey = 'recent' | 'start' | 'city';
 
+/** Tri appliqué quand l'URL n'en demande pas : le plus récent d'abord. */
+export const DEFAULT_SORT: SortKey = 'recent';
+
 export function applyQuery(
   offers: readonly Offer[],
   query: OfferQuery,
@@ -84,7 +87,7 @@ export function applyQuery(
     return true;
   });
 
-  return sortOffers(filtered, query.sort ?? 'recent');
+  return sortOffers(filtered, query.sort ?? DEFAULT_SORT);
 }
 
 export function sortOffers(offers: readonly Offer[], key: SortKey): Offer[] {

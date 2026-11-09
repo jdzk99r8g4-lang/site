@@ -10,6 +10,7 @@
 import type { ContractGroup } from './offer';
 import { CONTRACT_GROUPS } from './offer';
 import type { OfferQuery, SortKey } from './filters';
+import { DEFAULT_SORT } from './filters';
 import { allFamilySlugs } from './taxonomy';
 import { REGIONS } from './regions';
 import { parsePageParam } from './pagination';
@@ -79,7 +80,7 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
 
   const q = one(params['q']).slice(0, 80);
   const rawSort = one(params['tri']);
-  const sort: SortKey = SORTS.includes(rawSort as SortKey) ? (rawSort as SortKey) : 'recent';
+  const sort: SortKey = SORTS.includes(rawSort as SortKey) ? (rawSort as SortKey) : DEFAULT_SORT;
 
   const rawDate = one(params['debut_avant']);
   const startsBefore = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : '';
@@ -116,7 +117,9 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
  * page a affiché « 8 offres » en masquant qu'elle filtrait : une seule
  * définition évite que cela se reproduise.
  *
- * `sort` n'en fait pas partie : trier ne retire aucune offre.
+ * `sort` n'en fait pas partie : trier ne retire aucune offre, donc le total
+ * affiché ne change pas. Pour l'indexation, en revanche, le tri compte — voir
+ * `isReordered`.
  */
 export function hasActiveFilters(selected: ParsedQuery['selected']): boolean {
   return (
@@ -127,4 +130,21 @@ export function hasActiveFilters(selected: ParsedQuery['selected']): boolean {
     selected.q.length > 0 ||
     selected.startsBefore.length > 0
   );
+}
+
+/**
+ * L'URL demande-t-elle un autre ordre que celui par défaut ?
+ *
+ * Distinct de `hasActiveFilters` parce que les deux questions ont des
+ * réponses différentes : trier ne retire aucune offre — le compteur doit
+ * rester « 20 offres » — mais trier change QUELLES offres tombent sur la page
+ * 2. Mesuré sur le jeu de démonstration : `/offres?tri=city&page=2` et
+ * `/offres?page=2` n'ont que trois offres en commun sur six. Donner à la
+ * première la seconde pour canonique serait donc faux, au même titre que pour
+ * une page filtrée, et c'est pourquoi un tri non par défaut est traité comme
+ * elle : `noindex, follow`, sans canonique. La surface indexée reste la liste
+ * dans son ordre par défaut.
+ */
+export function isReordered(selected: ParsedQuery['selected']): boolean {
+  return selected.sort !== DEFAULT_SORT;
 }
