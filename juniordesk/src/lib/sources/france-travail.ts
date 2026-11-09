@@ -48,6 +48,7 @@
 import type { ContractKind, Offer } from '../offer';
 import type { FetchOutcome, JobSource } from './types';
 import { matchFamilies } from '../taxonomy';
+import { assessSeniority, type ExperienceSignal } from '../seniority';
 import { parseAddress } from '../geo';
 import { offerSlug } from '../slug';
 
@@ -88,6 +89,21 @@ interface FtOffer {
   romeCode?: string | null;
   typeContrat?: string | null;
   natureContrat?: string | null;
+  /**
+   * Expérience attendue.
+   *
+   * `experienceExige` porte un code court — « D » pour débutant accepté,
+   * « S » pour souhaitée, « E » pour exigée — et `experienceLibelle` le texte
+   * libre qui l'accompagne (« 2 ans », « Débutant accepté »).
+   *
+   * À RECONFIRMER le jour où l'accès à l'API est accordé : ces codes viennent
+   * de ce qui était documenté avant la fermeture de l'API, et n'ont pas pu
+   * être vérifiés contre une réponse réelle. Le code ne s'y fie d'ailleurs pas
+   * seul : le libellé est lu en parallèle, et une valeur inconnue laisse
+   * simplement la question ouverte au lieu de trancher de travers.
+   */
+  experienceExige?: string | null;
+  experienceLibelle?: string | null;
   alternance?: boolean | null;
   origineOffre?: { urlOrigine?: string | null } | null;
   entreprise?: { nom?: string | null; description?: string | null } | null;
@@ -223,6 +239,28 @@ async function searchPage(
   }
 }
 
+/**
+ * Ce que France Travail dit de l'expérience attendue.
+ *
+ * Les deux champs sont lus, et le libellé prime sur le code : « 2 ans » est
+ * une information plus précise que « expérience exigée ». Un code inconnu ne
+ * fait rien conclure — il laisse `acceptsBeginner` à `null`, c'est-à-dire
+ * « la source ne dit rien », et c'est la règle d'écart par défaut qui
+ * tranchera.
+ */
+export function readFtExperience(raw: FtOffer): ExperienceSignal {
+  const label = typeof raw.experienceLibelle === 'string' ? raw.experienceLibelle.trim() : '';
+  const code = (raw.experienceExige ?? '').trim().toUpperCase();
+
+  const acceptsBeginner = code === 'D' ? true : code === 'E' ? false : null;
+
+  return {
+    label: label || null,
+    minYears: null,
+    acceptsBeginner,
+  };
+}
+
 export function normalizeFtOffer(raw: FtOffer, collectedAt: string): Offer | null {
   const title = typeof raw.intitule === 'string' ? raw.intitule.trim() : '';
   const partnerJobId = typeof raw.id === 'string' ? raw.id.trim() : '';
@@ -235,9 +273,26 @@ export function normalizeFtOffer(raw: FtOffer, collectedAt: string): Offer | nul
   if (families.length === 0) return null;
 
   const kinds = mapFtContract(raw);
-  // On ne garde que les contrats d’entrée de carrière : France Travail diffuse
-  // tout le marché, y compris des postes à quinze ans d’expérience.
   if (kinds.length === 0) return null;
+
+  const experience = readFtExperience(raw);
+
+  /*
+   * France Travail diffuse TOUT le marché, pas seulement les débuts de
+   * carrière. Un stage ou une alternance porte son niveau dans son type de
+   * contrat ; un CDI ou un CDD n'en dit rien — « Directeur financier » est un
+   * CDI comme un autre.
+   *
+   * Une offre dont tous les contrats sont muets sur le niveau doit donc
+   * passer l'épreuve de `assessSeniority`, qui écarte par défaut quand rien
+   * ne permet de trancher. Sans cela, le site se remplirait de postes de
+   * direction sous une étiquette « poste junior ».
+   */
+  const levelIsImplied = kinds.some((k) => k === 'stage' || k === 'apprentissage' || k === 'professionnalisation');
+  if (!levelIsImplied) {
+    const verdict = assessSeniority({ title, experience });
+    if (!verdict.junior) return null;
+  }
 
   const id = `france-travail::${partnerJobId}`;
   const place = parseAddress(
@@ -277,6 +332,7 @@ export function normalizeFtOffer(raw: FtOffer, collectedAt: string): Offer | nul
     families,
     romeCodes,
     targetDiploma: null,
+    experience,
     publishedAt: toIso(raw.dateCreation),
     // France Travail ne publie pas de date d’expiration : une offre disparue de
     // la source est une offre retirée. La collecte s’en charge par différence.

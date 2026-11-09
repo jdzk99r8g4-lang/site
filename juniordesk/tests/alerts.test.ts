@@ -11,6 +11,7 @@ import { createToken, readToken, subscriptionId } from '@/lib/tokens';
 import { getStore, resetStore } from '@/lib/store';
 import type { AlertSubscription } from '@/lib/store/types';
 import type { Offer } from '@/lib/offer';
+import { NO_EXPERIENCE_SIGNAL } from '@/lib/seniority';
 
 beforeEach(() => {
   resetStore();
@@ -45,6 +46,7 @@ function offer(overrides: Partial<Offer> = {}): Offer {
     families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
+    experience: NO_EXPERIENCE_SIGNAL,
     publishedAt: null,
     expiresAt: null,
     collectedAt: '2026-11-07T00:00:00.000Z',

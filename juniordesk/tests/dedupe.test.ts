@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { dedupe, fingerprint } from '@/lib/dedupe';
 import type { Offer } from '@/lib/offer';
+import { NO_EXPERIENCE_SIGNAL } from '@/lib/seniority';
 
 function offer(overrides: Partial<Offer> & { id: string }): Offer {
   return {
@@ -15,6 +16,7 @@ function offer(overrides: Partial<Offer> & { id: string }): Offer {
     families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
+    experience: NO_EXPERIENCE_SIGNAL,
     publishedAt: '2026-11-01T00:00:00.000Z',
     expiresAt: null,
     collectedAt: '2026-11-07T00:00:00.000Z',

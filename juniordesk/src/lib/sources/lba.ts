@@ -34,6 +34,7 @@ import type { FetchOutcome, JobSource } from './types';
 import { matchFamilies } from '../taxonomy';
 import { parseAddress } from '../geo';
 import { offerSlug, shortCode } from '../slug';
+import { NO_EXPERIENCE_SIGNAL } from '../seniority';
 
 const BASE_URL = 'https://api.apprentissage.beta.gouv.fr/api';
 const EXPORT_PATH = '/job/v1/export';
@@ -304,6 +305,7 @@ export function normalizeOne(raw: LbaOffer, collectedAt: string): Offer | null {
     families,
     romeCodes,
     targetDiploma: clean(raw.offer?.target_diploma?.label),
+    experience: NO_EXPERIENCE_SIGNAL,
 
     publishedAt: toIsoDateTime(raw.offer?.publication?.creation),
     expiresAt: toIsoDateTime(raw.offer?.publication?.expiration),

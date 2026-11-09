@@ -15,6 +15,7 @@ import type { FetchOutcome, JobSource } from './types';
 import { matchFamilies } from '../taxonomy';
 import { parseAddress } from '../geo';
 import { offerSlug } from '../slug';
+import { NO_EXPERIENCE_SIGNAL } from '../seniority';
 
 const EXAMPLE_PREFIX = '[EXEMPLE]';
 
@@ -129,6 +130,7 @@ export function buildExampleOffers(now: Date = new Date()): Offer[] {
       families,
       romeCodes: seed.rome,
       targetDiploma: index % 2 === 0 ? 'Licence, BUT (bac + 3)' : 'Master (bac + 5)',
+      experience: NO_EXPERIENCE_SIGNAL,
       publishedAt: addDays(now, -(index + 1)).toISOString(),
       expiresAt: addDays(now, seed.expiresInDays).toISOString(),
       collectedAt,

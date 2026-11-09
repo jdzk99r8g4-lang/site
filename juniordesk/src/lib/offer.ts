@@ -1,3 +1,4 @@
+import type { ExperienceSignal } from './seniority';
 /**
  * Modèle d’offre NORMALISÉ.
  *
@@ -88,6 +89,17 @@ export interface Offer {
   /** Niveau de diplôme visé, libellé brut de la source. */
   targetDiploma: string | null;
 
+  /**
+   * Ce que la source dit de l'expérience attendue.
+   *
+   * Sert à deux choses : décider, à la collecte, si un CDI ou un CDD est
+   * vraiment un poste d'entrée (`assessSeniority` dans `seniority.ts`), et
+   * l'afficher au candidat — « débutant accepté » est l'information qu'il
+   * cherche en premier. Les sources d'alternance n'en disent rien et portent
+   * `NO_EXPERIENCE_SIGNAL`.
+   */
+  experience: ExperienceSignal;
+
   /** Dates ISO complètes. */
   publishedAt: string | null;
   expiresAt: string | null;
@@ -175,6 +187,20 @@ export const CONTRACT_GROUP_PLURALS: Record<ContractGroup, string> = {
   junior: 'postes juniors',
 };
 
+/**
+ * Un CDI ou un CDD est rangé dans « poste junior » — et cela n'est vrai que
+ * parce que les offres qui arrivent ici ont déjà été triées.
+ *
+ * Lu seul, ce tableau semble affirmer que tout CDI est un poste d'entrée,
+ * ce qui est faux : « Directeur financier » est un CDI. La garantie est
+ * ailleurs, à la collecte : `assessSeniority` (voir `seniority.ts`) écarte
+ * les offres en CDI ou CDD dont rien n'établit qu'elles s'adressent à un
+ * début de carrière. Les stages et les alternances, eux, portent leur niveau
+ * dans leur type de contrat et ne passent pas par cette épreuve.
+ *
+ * Si un jour une source produit des CDI sans passer par ce tri, ce tableau
+ * recommencera à mentir. C'est le seul endroit où le noter.
+ */
 const GROUP_BY_KIND: Record<ContractKind, ContractGroup> = {
   stage: 'stage',
   apprentissage: 'alternance',

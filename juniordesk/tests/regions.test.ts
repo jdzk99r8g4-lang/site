@@ -3,6 +3,7 @@ import { REGIONS, departementCount, regionBySlug, regionOf } from '@/lib/regions
 import { parseAddress } from '@/lib/geo';
 import { applyQuery, buildFacets } from '@/lib/filters';
 import type { Offer } from '@/lib/offer';
+import { NO_EXPERIENCE_SIGNAL } from '@/lib/seniority';
 
 const NOW = new Date('2026-11-08T12:00:00.000Z');
 
@@ -21,6 +22,7 @@ function offerAt(id: string, address: string): Offer {
     families: ['banque-detail-credit'],
     romeCodes: ['C1202'],
     targetDiploma: null,
+    experience: NO_EXPERIENCE_SIGNAL,
     publishedAt: '2026-11-01T00:00:00.000Z',
     expiresAt: null,
     collectedAt: NOW.toISOString(),
