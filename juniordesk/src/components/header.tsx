@@ -26,7 +26,7 @@ export async function Header() {
         </Link>
 
         <span className="rounded-full bg-accent-bg px-2.5 py-0.5 text-xs font-semibold text-accent">
-          {brand.scope.label}
+          {brand.scope.available.label}
         </span>
 
         <HeaderNav />

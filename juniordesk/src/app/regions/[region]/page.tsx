@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLiveOffers, isDemoMode } from '@/lib/offers';
 import { applyQuery, buildFacets } from '@/lib/filters';
-import { toPublicOffer } from '@/lib/offer';
+import { groupsLabel, groupsPresent, toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
 import { regionBySlug } from '@/lib/regions';
 import { cityIndex } from '@/lib/geo';
@@ -59,14 +59,15 @@ export async function generateMetadata({
   const requestedPage = parsePageParam((await searchParams)['page']);
   const { page, clamped } = paginate(found.offers, requestedPage);
   const base = `/regions/${slug}`;
+  const quoi = groupsLabel(groupsPresent(found.offers));
 
   return {
     title:
       page > 1
-        ? `Alternance finance en ${found.region.name} — page ${page}`
-        : `Alternance finance en ${found.region.name}`,
+        ? `${quoi} finance en ${found.region.name} — page ${page}`
+        : `${quoi} finance en ${found.region.name}`,
     description:
-      `${found.offers.length} offre${found.offers.length === 1 ? '' : 's'} d’alternance en ` +
+      `${found.offers.length} offre${found.offers.length === 1 ? '' : 's'} ${quoi.toLowerCase()} en ` +
       `finance en ${found.region.name} : banque, assurance, audit, comptabilité, contrôle ` +
       'de gestion.',
     alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
@@ -102,7 +103,7 @@ export default async function RegionPage({
         </nav>
 
         <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">
-          Alternance finance en {found.region.name}
+          {groupsLabel(groupsPresent(found.offers))} finance en {found.region.name}
         </h1>
         <p className="mt-2 text-[15px] font-bold">
           {found.offers.length} offre{found.offers.length === 1 ? '' : 's'} en ligne

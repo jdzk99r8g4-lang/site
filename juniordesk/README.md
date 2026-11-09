@@ -20,6 +20,24 @@ Le projet vise trois types de contrat. Un seul est alimenté :
 | Stage | France Travail | Adaptateur écrit, **source fermée** |
 | Poste junior | France Travail | Adaptateur écrit, **source fermée** |
 
+Le site **annonce** les trois — c'est ce qu'il est, et un étudiant qui cherche
+un stage doit comprendre qu'il reviendra utilement. Mais il **dit** en page
+d'accueil, dans son en-tête et en tête de la liste ce que le catalogue
+contient réellement aujourd'hui. Les deux phrases vivent dans `brand.scope` :
+`mission` d'un côté, `available` de l'autre, et un test interdit qu'elles se
+confondent. Les titres des pages de référencement, eux, ne disent ni l'une ni
+l'autre : ils sont calculés depuis les offres de la page, donc ils suivront le
+catalogue tout seuls.
+
+**Reconnaître un poste junior.** Un stage porte son niveau dans son type de
+contrat, une alternance aussi. Un CDI n'en dit rien : « Directeur financier »
+est un CDI. `seniority.ts` tranche sur l'expérience déclarée par la source,
+puis sur l'intitulé — exclusions d'abord (senior, responsable, directeur,
+associate, VP), marqueurs d'entrée ensuite (junior, jeune diplômé, graduate,
+VIE, analyste). **Et si rien ne permet de trancher, l'offre est écartée** :
+rater une offre coûte à l'étudiant une occasion qu'il n'a jamais vue, lui
+montrer un poste de directeur étiqueté « junior » lui coûte sa confiance.
+
 L'API « Offres d'emploi » de France Travail n'est plus accessible librement. Sa
 fiche sur data.gouv.fr indique qu'elle « n'est actuellement plus exposée sur
 www.francetravail.io le temps d'une analyse des modalités de distribution et de

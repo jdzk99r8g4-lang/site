@@ -111,7 +111,7 @@ export default async function OffersPage({
       <main className="mx-auto max-w-[1140px] px-5 py-8 sm:px-6">
         <h1 className="text-2xl font-extrabold sm:text-3xl">Offres</h1>
         <p className="mt-1.5 text-sm text-muted">
-          {all.length} offre{all.length === 1 ? '' : 's'} en ligne · {brand.scope.label}
+          {all.length} offre{all.length === 1 ? '' : 's'} en ligne · {brand.scope.available.label}
         </p>
 
         {params['retiree'] ? (

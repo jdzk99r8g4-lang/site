@@ -8,7 +8,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: 'Les villes',
   description:
-    'Les villes où des offres d’alternance en finance sont actuellement en ligne, avec le ' +
+    'Les villes où des offres en finance sont actuellement en ligne, avec le ' +
     'nombre d’offres pour chacune.',
 };
 

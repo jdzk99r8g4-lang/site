@@ -213,6 +213,39 @@ export function groupOf(kind: ContractKind): ContractGroup {
   return GROUP_BY_KIND[kind];
 }
 
+/**
+ * Décrit les familles de contrat réellement présentes dans une liste.
+ *
+ * Sert aux titres des pages de référencement, et c'est ce qui leur permet de
+ * ne mentir dans aucun des deux sens. Les figer sur « Alternance » rendrait
+ * le jour où les stages arrivent chaque titre faux sans que personne ne le
+ * voie ; les figer sur les trois familles promettrait aujourd'hui des stages
+ * que la page ne contient pas. Calculé depuis les offres, le titre suit le
+ * catalogue tout seul.
+ *
+ * Une seule famille garde le singulier, parce qu'un titre se lit et se
+ * cherche au singulier : « Alternance audit » et non « Alternances audit ».
+ */
+export function groupsLabel(groups: readonly ContractGroup[]): string {
+  const present = CONTRACT_GROUPS.filter((g) => groups.includes(g));
+  if (present.length === 0) return 'Offres';
+  if (present.length === 1) return CONTRACT_GROUP_LABELS[present[0] as ContractGroup];
+
+  const pluriels = present.map((g) => CONTRACT_GROUP_PLURALS[g]);
+  const dernier = pluriels[pluriels.length - 1] as string;
+  const debut = pluriels.slice(0, -1).join(', ');
+  const phrase = `${debut} et ${dernier}`;
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
+/** Familles de contrat présentes dans une liste d'offres. */
+export function groupsPresent(
+  offers: readonly { contract: { kinds: readonly ContractKind[] } }[],
+): ContractGroup[] {
+  const groups = new Set<ContractGroup>(offers.flatMap((o) => o.contract.kinds.map(groupOf)));
+  return CONTRACT_GROUPS.filter((g) => groups.has(g));
+}
+
 /** Familles de contrat portées par une offre, sans doublon, dans l'ordre canonique. */
 export function contractGroups(offer: {
   contract: { kinds: readonly ContractKind[] };

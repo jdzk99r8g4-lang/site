@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { brand } from '@/lib/brand';
 import { findOfferBySlug, getLiveOffers, isDemoMode } from '@/lib/offers';
-import { CONTRACT_GROUP_LABELS, REMOTE_LABELS, contractGroups } from '@/lib/offer';
+import { CONTRACT_GROUP_LABELS, REMOTE_LABELS, contractGroups, groupsLabel } from '@/lib/offer';
 import { familyBySlug } from '@/lib/taxonomy';
 import { formatDate } from '@/components/offer-card';
 import { ShareButtons } from '@/components/share-buttons';
@@ -39,7 +39,7 @@ export async function generateMetadata({
   return {
     title: `${offer.title} — ${employer}, ${place}`,
     description:
-      `Offre d’alternance : ${offer.title} chez ${employer} à ${place}. ` +
+      `${groupsLabel(contractGroups(offer))} : ${offer.title} chez ${employer} à ${place}. ` +
       `${contractGroups(offer).map((g) => CONTRACT_GROUP_LABELS[g]).join(', ')}.` +
       (offer.contract.start ? ` Début ${formatDate(offer.contract.start)}.` : ''),
     alternates: { canonical: `/offres/${offer.slug}` },

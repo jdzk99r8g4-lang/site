@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLiveOffers, isDemoMode } from '@/lib/offers';
 import { applyQuery, buildFacets } from '@/lib/filters';
-import { toPublicOffer } from '@/lib/offer';
+import { groupsLabel, groupsPresent, toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
 import { cityIndex } from '@/lib/geo';
 import { JOB_FAMILIES } from '@/lib/taxonomy';
@@ -58,14 +58,15 @@ export async function generateMetadata({
   const requestedPage = parsePageParam((await searchParams)['page']);
   const { page, clamped } = paginate(found.offers, requestedPage);
   const base = `/villes/${ville}`;
+  const quoi = groupsLabel(groupsPresent(found.offers));
 
   return {
     title:
       page > 1
-        ? `Alternance finance à ${found.label} — page ${page}`
-        : `Alternance finance à ${found.label}`,
+        ? `${quoi} finance à ${found.label} — page ${page}`
+        : `${quoi} finance à ${found.label}`,
     description:
-      `${found.offers.length} offre${found.offers.length === 1 ? '' : 's'} d’alternance en ` +
+      `${found.offers.length} offre${found.offers.length === 1 ? '' : 's'} ${quoi.toLowerCase()} en ` +
       `finance à ${found.label} : banque, assurance, audit, comptabilité, contrôle de gestion.`,
     alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
     ...(clamped && requestedPage !== 1 ? { robots: { index: false, follow: true } } : {}),
@@ -99,7 +100,7 @@ export default async function CityPage({
         </nav>
 
         <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">
-          Alternance finance à {found.label}
+          {groupsLabel(groupsPresent(found.offers))} finance à {found.label}
         </h1>
         <p className="mt-2 text-[15px] font-bold">
           {found.offers.length} offre{found.offers.length === 1 ? '' : 's'} en ligne

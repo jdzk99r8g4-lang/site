@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { brand } from '@/lib/brand';
 import { getLiveOffers, isDemoMode } from '@/lib/offers';
 import { applyQuery, buildFacets } from '@/lib/filters';
-import { CONTRACT_GROUP_PLURALS, toPublicOffer } from '@/lib/offer';
+import { CONTRACT_GROUP_PLURALS, groupsLabel, groupsPresent, toPublicOffer } from '@/lib/offer';
 import { activeContractGroups } from '@/lib/sources';
 import { JOB_FAMILIES, familyBySlug } from '@/lib/taxonomy';
 import { paginate, parsePageParam } from '@/lib/pagination';
@@ -52,9 +52,13 @@ export async function generateMetadata({
   const { page, clamped } = paginate(offers, requestedPage);
   const base = `/metiers/${family.slug}`;
 
+  // Le titre décrit ce que la page contient vraiment, pas ce que le site
+  // espère contenir un jour. Voir `groupsLabel`.
+  const quoi = groupsLabel(groupsPresent(offers));
+
   return {
-    title: page > 1 ? `Alternance ${family.label} — page ${page}` : `Alternance ${family.label}`,
-    description: `${family.intro} Toutes les offres d’alternance ${family.label.toLowerCase()} collectées automatiquement.`,
+    title: page > 1 ? `${quoi} ${family.label} — page ${page}` : `${quoi} ${family.label}`,
+    description: `${family.intro} Les offres ${quoi.toLowerCase()} ${family.label.toLowerCase()} collectées automatiquement.`,
     alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
     ...(clamped && requestedPage !== 1 ? { robots: { index: false, follow: true } } : {}),
   };

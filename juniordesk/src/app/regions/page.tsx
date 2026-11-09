@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: 'Les régions',
   description:
-    'Les régions où des offres d’alternance en finance sont en ligne. La région est la ' +
+    'Les régions où des offres en finance sont en ligne. La région est la ' +
     'bonne maille pour l’Île-de-France, où La Défense se trouve à Puteaux et à Courbevoie ' +
     'et non à Paris.',
 };

@@ -95,9 +95,9 @@ export default async function HomePage() {
             repartir tout de suite plutôt que de fouiller. */}
         <section className="mt-8 rounded-card border border-line bg-card p-5">
           <h2 className="text-[15px] font-bold">
-            Ce que ce site contient aujourd’hui : {brand.scope.label.toLowerCase()}
+            Ce que ce site contient aujourd’hui : {brand.scope.available.label.toLowerCase()}
           </h2>
-          <p className="mt-2 text-sm text-muted">{brand.scope.detail}</p>
+          <p className="mt-2 text-sm text-muted">{brand.scope.available.detail}</p>
           <p className="mt-2 text-sm text-muted">
             <Link href="/sources" className="text-accent">
               D’où viennent les offres, et pourquoi il n’y a pas encore de stages →
