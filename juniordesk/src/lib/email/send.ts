@@ -18,6 +18,22 @@ export interface Mail {
   subject: string;
   text: string;
   html: string;
+  /**
+   * Adresse de désinscription en un clic, pour les messages de diffusion.
+   *
+   * Quand elle est là, le message porte `List-Unsubscribe` et
+   * `List-Unsubscribe-Post`, c'est-à-dire le bouton « Se désabonner » que
+   * Gmail et Outlook affichent eux-mêmes. Sans lui, la personne qui ne veut
+   * plus de nos messages utilise le seul bouton qu'elle voit — « signaler
+   * comme spam » — et quelques plaintes suffisent à faire classer le domaine,
+   * ce qui frappe ensuite TOUTES les alertes du site.
+   *
+   * Les messages transactionnels (confirmation d'inscription,
+   * réinitialisation de mot de passe) n'en portent pas : on ne se désabonne
+   * pas d'un message qu'on vient de demander, et l'annoncer embrouillerait
+   * les filtres autant que les gens.
+   */
+  unsubscribeUrl?: string;
 }
 
 export type SendResult = { ok: true; simulated: boolean } | { ok: false; error: string };
@@ -53,6 +69,23 @@ export async function sendMail(mail: Mail): Promise<SendResult> {
       subject: mail.subject,
       text: mail.text,
       html: mail.html,
+      ...(mail.unsubscribeUrl
+        ? {
+            headers: {
+              /*
+               * Les chevrons sont exigés par le format de l'en-tête ; sans
+               * eux l'adresse est ignorée en silence.
+               */
+              'List-Unsubscribe': `<${mail.unsubscribeUrl}>`,
+              /*
+               * Dit à la messagerie qu'un POST sur cette adresse suffit, sans
+               * page à ouvrir ni confirmation à demander. C'est la route
+               * `/api/alertes/desinscription` qui le reçoit.
+               */
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          }
+        : {}),
     });
 
     if (result.error) {

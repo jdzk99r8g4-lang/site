@@ -48,6 +48,8 @@
 import type { ContractKind, Offer } from '../offer';
 import type { FetchOutcome, JobSource } from './types';
 import { matchFamilies } from '../taxonomy';
+import { isSafeApplyUrl } from '../apply-url';
+import { brand } from '../brand';
 import { assessSeniority, type ExperienceSignal } from '../seniority';
 import { parseAddress } from '../geo';
 import { offerSlug } from '../slug';
@@ -266,7 +268,9 @@ export function normalizeFtOffer(raw: FtOffer, collectedAt: string): Offer | nul
   const partnerJobId = typeof raw.id === 'string' ? raw.id.trim() : '';
   const applyUrl = typeof raw.origineOffre?.urlOrigine === 'string' ? raw.origineOffre.urlOrigine : '';
 
-  if (!title || !partnerJobId || !applyUrl) return null;
+  if (!title || !partnerJobId) return null;
+  // Voir `apply-url.ts` : c'est une cible de redirection, pas un simple champ.
+  if (!isSafeApplyUrl(applyUrl, brand.url)) return null;
 
   const romeCodes = typeof raw.romeCode === 'string' ? [raw.romeCode] : [];
   const { families } = matchFamilies({ title, romeCodes });

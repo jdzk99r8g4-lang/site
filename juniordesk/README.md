@@ -216,6 +216,7 @@ Tout est dans `.env.example`, commenté ligne par ligne.
 | `ALERTS_SECRET` | Signe les liens d'alerte et de compte | **en production** |
 | `GOOGLE_CLIENT_ID` / `_SECRET` | Bouton « Continuer avec Google » | facultatif |
 | `EMAIL_HOURLY_CAP` | Plafond horaire d'e-mails déclenchés par un visiteur (200) | facultatif |
+| `ALERTS_PER_RUN` | Abonnés servis par passage du cron d'alertes (150) | facultatif |
 | `OFFERS_PER_PAGE` | Offres par page de liste (24) | facultatif |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Envoi des alertes | pour notifier |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | `true` le jour du lancement seulement | — |

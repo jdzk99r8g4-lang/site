@@ -1,8 +1,16 @@
 /**
  * GET /api/cron/collect — collecte quotidienne.
  *
- * Enchaîne : interroger les sources, dédoublonner, écrire l'instantané,
- * envoyer les alertes correspondantes, marquer les offres comme annoncées.
+ * Enchaîne : interroger les sources, dédoublonner, écrire l'instantané.
+ *
+ * Les alertes ne partent PLUS d'ici. Elles ont leur propre passage
+ * (`/api/cron/alertes`), pour une raison de robustesse : les envois sont
+ * séquentiels, un appel réseau par abonné, et les enchaîner derrière la
+ * collecte faisait dépendre l'écriture de l'instantané du nombre d'abonnés.
+ * Un dépassement de temps tuait alors la fonction quelque part dans la boucle
+ * d'envoi, et comme rien n'était marqué « annoncé », le lendemain les
+ * premiers de la file recevaient une seconde fois ce qu'ils avaient déjà reçu.
+ * Deux métiers, deux passages.
  *
  * ---------------------------------------------------------------------------
  * Heure de passage
@@ -24,13 +32,11 @@
 import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { collect } from '@/lib/collect';
-import { sendDigests } from '@/lib/alerts';
 import { getStore } from '@/lib/store';
-import { findOfferById } from '@/lib/offers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-/** L'export complet puis les envois : il faut de la marge. */
+/** L'export complet peut être volumineux : il faut de la marge. */
 export const maxDuration = 300;
 
 function authorized(request: Request): boolean {
@@ -62,20 +68,6 @@ export async function GET(request: Request) {
 
   const report = await collect();
 
-  // Les alertes ne partent que sur des offres réellement nouvelles.
-  const newOffers = (
-    await Promise.all(report.newOfferIds.map((id) => findOfferById(id)))
-  ).filter((offer): offer is NonNullable<typeof offer> => offer !== null);
-
-  const digests = await sendDigests(newOffers);
-
-  // On ne marque comme annoncées QUE les offres effectivement envoyées. Si un
-  // envoi échoue, l'offre repassera dans le différentiel demain plutôt que
-  // d'être perdue pour tout le monde.
-  if (digests.announcedIds.length > 0) {
-    await store.markAnnounced(digests.announcedIds);
-  }
-
   if (report.warnings.length > 0) {
     console.warn('[collecte] avertissements :', report.warnings.join(' | '));
   }
@@ -86,14 +78,9 @@ export async function GET(request: Request) {
     expired: report.expired,
     exactDuplicates: report.exactDuplicates,
     crossDuplicates: report.crossDuplicates,
-    newOffers: newOffers.length,
+    newOffers: report.newOfferIds.length,
     keptPreviousSnapshot: report.keptPreviousSnapshot,
     sources: report.sources,
     warnings: report.warnings,
-    alerts: {
-      subscriptions: digests.subscriptions,
-      mailsSent: digests.mailsSent,
-      mailsFailed: digests.mailsFailed,
-    },
   });
 }

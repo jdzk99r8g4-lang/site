@@ -4,6 +4,22 @@
     {
       "path": "/api/cron/collect",
       "schedule": "40 2 * * *"
+    },
+    {
+      "path": "/api/cron/alertes",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/alertes",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron/alertes",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/alertes",
+      "schedule": "45 3 * * *"
     }
   ]
 }

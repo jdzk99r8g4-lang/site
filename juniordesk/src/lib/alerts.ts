@@ -156,33 +156,93 @@ export interface DigestReport {
   mailsFailed: number;
   /** Identifiants d’offres réellement annoncées, à marquer comme telles. */
   announcedIds: string[];
+  /**
+   * Abonnés qui restent à servir pour ce différentiel.
+   *
+   * Tant qu'il n'est pas à zéro, les offres NE DOIVENT PAS être marquées
+   * comme annoncées : elles sortiraient du différentiel et les abonnés non
+   * encore servis ne les verraient jamais.
+   */
+  remaining: number;
 }
+
+/**
+ * Nombre d'abonnés servis par passage.
+ *
+ * Les envois sont séquentiels — un appel réseau par abonné — dans une
+ * fonction serverless dont le temps est borné. Sans plafond, la fonction est
+ * tuée au milieu de la boucle quelque part entre quatre et cinq cents
+ * abonnés, et c'est le genre de limite qu'on découvre le jour où on la
+ * franchit, sans qu'aucune erreur ne l'annonce.
+ *
+ * Avec un plafond, un passage sert ce qu'il peut, s'arrête proprement et dit
+ * ce qu'il reste. Le suivant reprend là où celui-ci s'est arrêté.
+ */
+const SUBSCRIBERS_PER_RUN = Number.parseInt(process.env.ALERTS_PER_RUN ?? '', 10) || 150;
 
 /**
  * Envoie le différentiel du jour.
  *
- * `newOffers` ne contient que des offres jamais annoncées : c’est la collecte
- * qui l’établit, via le magasin, et non une comparaison d’instantanés — une
- * offre retirée puis remise en ligne ne doit pas être annoncée deux fois.
+ * `newOffers` ne contient que des offres jamais annoncées : c’est le magasin
+ * qui l’établit, et non une comparaison d’instantanés — une offre retirée
+ * puis remise en ligne ne doit pas être annoncée deux fois.
+ *
+ * ---------------------------------------------------------------------------
+ * Reprendre sans renvoyer deux fois
+ * ---------------------------------------------------------------------------
+ * `since` est la date de l'instantané en cours. Un abonné dont le
+ * `lastSentAt` lui est postérieur a DÉJÀ été servi pour ce différentiel-là :
+ * il est sauté. C'est ce qui rend un passage interrompu sans conséquence —
+ * le suivant reprend la liste là où elle en était, au lieu de recommencer et
+ * d'envoyer une deuxième fois aux premiers de la file.
+ *
+ * `remaining` dit combien d'abonnés attendent encore. L'appelant ne marque
+ * les offres comme annoncées QUE lorsqu'il vaut zéro : les marquer plus tôt
+ * les retirerait du différentiel et les abonnés non encore servis ne les
+ * verraient jamais.
  */
-export async function sendDigests(newOffers: readonly Offer[]): Promise<DigestReport> {
+export async function sendDigests(
+  newOffers: readonly Offer[],
+  options: { since?: string; limit?: number } = {},
+): Promise<DigestReport> {
   const store = getStore();
-  const subscriptions = await store.listConfirmedSubscriptions();
+  const all = await store.listConfirmedSubscriptions();
+  const limit = options.limit ?? SUBSCRIBERS_PER_RUN;
+
+  const pending = options.since
+    ? all.filter((s) => !s.lastSentAt || s.lastSentAt < (options.since as string))
+    : all;
+
+  const subscriptions = pending.slice(0, limit);
 
   const report: DigestReport = {
-    subscriptions: subscriptions.length,
+    subscriptions: all.length,
     mailsSent: 0,
     mailsFailed: 0,
     announcedIds: [],
+    remaining: Math.max(0, pending.length - subscriptions.length),
   };
 
-  if (newOffers.length === 0 || subscriptions.length === 0) return report;
+  if (newOffers.length === 0 || subscriptions.length === 0) {
+    report.remaining = 0;
+    return report;
+  }
 
   const announced = new Set<string>();
 
   for (const subscription of subscriptions) {
     const matching = newOffers.filter((offer) => matchesSubscription(offer, subscription));
-    if (matching.length === 0) continue;
+    if (matching.length === 0) {
+      /*
+       * Rien à lui envoyer, mais il a bien été EXAMINÉ pour ce différentiel.
+       * Sans avancer sa date, il resterait éternellement « en attente » et le
+       * passage suivant le réexaminerait en boucle sans jamais atteindre les
+       * abonnés qui le suivent dans la liste.
+       */
+      subscription.lastSentAt = new Date().toISOString();
+      await store.saveSubscription(subscription);
+      continue;
+    }
 
     // Au-delà d’une quinzaine d’offres, un e-mail n’est plus lu. On garde les
     // plus récentes et le site montre le reste.
@@ -195,16 +255,28 @@ export async function sendDigests(newOffers: readonly Offer[]): Promise<DigestRe
         `?src=alerte&a=${encodeURIComponent(clickToken)}`,
     );
 
+    const unsubscribeToken = encodeURIComponent(createToken(subscription.id, 'unsubscribe'));
+
     const mail = digestMail({
       offers: selected,
       links,
-      unsubscribeUrl: `${brand.url}/alertes/desinscription?jeton=${encodeURIComponent(
-        createToken(subscription.id, 'unsubscribe'),
-      )}`,
+      // Lien lisible, dans le corps du message : il ouvre une page qui
+      // confirme ce qui vient d'être fait.
+      unsubscribeUrl: `${brand.url}/alertes/desinscription?jeton=${unsubscribeToken}`,
       criteria: describeCriteria(subscription),
     });
 
-    const sent = await sendMail({ to: subscription.email, ...mail });
+    const sent = await sendMail({
+      to: subscription.email,
+      ...mail,
+      /*
+       * Adresse pour le bouton « Se désabonner » de la messagerie elle-même,
+       * qui appelle en POST sans ouvrir de page — d'où une route distincte de
+       * celle du lien ci-dessus. Voir `src/lib/email/send.ts` pour ce que cet
+       * en-tête protège.
+       */
+      unsubscribeUrl: `${brand.url}/api/alertes/desinscription?jeton=${unsubscribeToken}`,
+    });
 
     if (sent.ok) {
       report.mailsSent += 1;

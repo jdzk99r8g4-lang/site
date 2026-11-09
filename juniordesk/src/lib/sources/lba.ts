@@ -32,6 +32,8 @@
 import type { ContractKind, Offer } from '../offer';
 import type { FetchOutcome, JobSource } from './types';
 import { matchFamilies } from '../taxonomy';
+import { isSafeApplyUrl } from '../apply-url';
+import { brand } from '../brand';
 import { parseAddress } from '../geo';
 import { offerSlug, shortCode } from '../slug';
 import { NO_EXPERIENCE_SIGNAL } from '../seniority';
@@ -246,7 +248,7 @@ export function normalizeOne(raw: LbaOffer, collectedAt: string): Offer | null {
   // inutilisable : on ne peut ni l’afficher, ni y envoyer quelqu’un, ni la
   // reconnaître à la prochaine collecte.
   if (!title || !applyUrl || !partnerJobId) return null;
-  if (!isHttpUrl(applyUrl)) return null;
+  if (!isSafeApplyUrl(applyUrl, brand.url)) return null;
 
   // Une offre pourvue ou annulée ne doit pas rester affichée.
   const status = clean(raw.offer?.status);
@@ -340,15 +342,6 @@ function clean(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.replace(/\s+/g, ' ').trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:';
-  } catch {
-    return false;
-  }
 }
 
 /** Garde la date seule (AAAA-MM-JJ) : l’heure de début d’un contrat n’a pas de sens. */
