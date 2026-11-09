@@ -286,6 +286,51 @@ export function resetNoAccountMail(input: { signUpUrl: string }): {
   return { subject, text, html };
 }
 
+/**
+ * Avertissement avant suppression d'un compte resté inactif.
+ *
+ * Un compte porte des offres mises de côté et des candidatures notées :
+ * l'effacer sans prévenir ferait disparaître le travail de quelqu'un pour
+ * appliquer une règle qu'il n'a jamais lue. Ce message dit ce qui va se
+ * passer, quand, et comment l'empêcher — se connecter suffit.
+ */
+export function accountPurgeWarningMail(input: { email: string; deleteAfterDays: number }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Votre compte ${brand.name} va être supprimé`;
+  const loginUrl = `${brand.url}/connexion`;
+  const jours = input.deleteAfterDays;
+
+  const text = [
+    `Votre compte ${brand.name} n’a pas servi depuis près de deux ans.`,
+    '',
+    `Sans connexion de votre part dans les ${jours} prochains jours, il sera supprimé,`,
+    'avec vos offres mises de côté, vos candidatures notées et votre alerte.',
+    'Nous ne gardons pas de données dont personne ne se sert.',
+    '',
+    'Pour le conserver, il suffit de vous connecter une fois :',
+    loginUrl,
+    '',
+    'Si vous n’en avez plus besoin, vous n’avez rien à faire.',
+    '',
+    brand.name,
+  ].join('\n');
+
+  const html = layout(
+    `<h1>Votre compte va être supprimé</h1>
+     <p>Votre compte ${escapeHtml(brand.name)} n’a pas servi depuis près de deux ans.</p>
+     <p>Sans connexion de votre part dans les <strong>${jours} prochains jours</strong>, il
+        sera supprimé, avec vos offres mises de côté, vos candidatures notées et votre
+        alerte. Nous ne gardons pas de données dont personne ne se sert.</p>
+     <p><a class="btn" href="${escapeAttr(loginUrl)}">Conserver mon compte</a></p>
+     <p class="muted">Si vous n’en avez plus besoin, vous n’avez rien à faire.</p>`,
+  );
+
+  return { subject, text, html };
+}
+
 function layout(body: string): string {
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />

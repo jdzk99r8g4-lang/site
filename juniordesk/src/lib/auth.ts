@@ -207,6 +207,7 @@ export async function register(input: {
     createdAt: new Date().toISOString(),
     verifiedAt: null,
     lastLoginAt: null,
+    purgeWarnedAt: null,
     savedOfferIds: [],
     applications: [],
   };
@@ -700,6 +701,7 @@ export async function signInWithGoogle(identity: {
       createdAt: now,
       verifiedAt: now,
       lastLoginAt: null,
+    purgeWarnedAt: null,
       savedOfferIds: [],
       applications: [],
     };

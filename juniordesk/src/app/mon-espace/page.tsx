@@ -208,6 +208,25 @@ export default async function MySpacePage({
         )}
       </section>
 
+      {/* Mes données */}
+      <section className="mt-12">
+        <h2 className="text-[15px] font-bold">Mes données</h2>
+        <p className="mt-1.5 text-[13px] text-muted">
+          Tout ce que nous détenons sur vous, dans un fichier lisible : votre adresse, les
+          dates, vos offres enregistrées, vos candidatures notées et les critères de votre
+          alerte. Ni votre mot de passe ni vos sessions n’y figurent — le fichier explique
+          pourquoi.
+        </p>
+        <p className="mt-4">
+          <a
+            href="/api/compte/export"
+            className="inline-block rounded-lg border border-line px-4 py-2 text-sm font-semibold no-underline transition-colors hover:border-line-hover"
+          >
+            Télécharger mes données
+          </a>
+        </p>
+      </section>
+
       {/* Suppression */}
       <section className="mt-14 rounded-card border border-warn/40 bg-warn-bg p-5">
         <h2 className="text-[15px] font-bold text-warn">Supprimer mon compte</h2>

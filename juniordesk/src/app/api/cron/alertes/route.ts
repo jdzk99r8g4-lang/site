@@ -35,7 +35,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { timingSafeEqual } from 'node:crypto';
+import { cronAuthorized } from '@/lib/cron-auth';
 import { sendDigests } from '@/lib/alerts';
 import { getStore } from '@/lib/store';
 import { getLiveOffers } from '@/lib/offers';
@@ -44,20 +44,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-function authorized(request: Request): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return false;
-
-  const header = request.headers.get('authorization') ?? '';
-  const provided = header.replace(/^Bearer\s+/i, '');
-  const given = Buffer.from(provided);
-  const wanted = Buffer.from(expected);
-  if (given.length !== wanted.length) return false;
-  return timingSafeEqual(given, wanted);
-}
-
 export async function GET(request: Request) {
-  if (!authorized(request)) {
+  if (!cronAuthorized(request)) {
     return NextResponse.json({ error: 'non autorise' }, { status: 401 });
   }
 

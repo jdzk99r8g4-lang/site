@@ -70,6 +70,14 @@ export interface Account {
   createdAt: string;
   verifiedAt: string | null;
   lastLoginAt: string | null;
+  /**
+   * Date du dernier avertissement avant suppression pour inactivité.
+   *
+   * Comparée au dernier signe de vie pour n'avertir qu'une fois par période
+   * d'inactivité : sans elle, le ménage quotidien enverrait le même message
+   * tous les jours pendant un mois.
+   */
+  purgeWarnedAt: string | null;
   /** Identifiants d'offres mises de côté. */
   savedOfferIds: string[];
   /** Offres pour lesquelles la personne déclare avoir postulé. */
@@ -117,6 +125,18 @@ export interface OfferStore {
   saveAccount(account: Account): Promise<void>;
   getAccount(id: string): Promise<Account | null>;
   deleteAccount(id: string): Promise<void>;
+  /**
+   * Tous les comptes.
+   *
+   * Nécessaire au ménage planifié : sans énumération, aucune durée de
+   * conservation ne peut être appliquée, et « nous conservons vos données le
+   * temps nécessaire » devient une phrase sans effet.
+   *
+   * À n'appeler que depuis une tâche de fond. Une page qui chargerait tous
+   * les comptes pour en afficher un serait un défaut de conception, et une
+   * fuite le jour où elle se trompe de filtre.
+   */
+  listAccounts(): Promise<Account[]>;
 
   /** Crée une session et renvoie son identifiant opaque. */
   createSession(accountId: string, ttlSeconds: number): Promise<string>;

@@ -30,6 +30,14 @@ const SUBSCRIPTION_KEY = (id: string) => `jd:sub:${id}`;
 const SUBSCRIPTION_INDEX = 'jd:subs';
 const COUNTER_KEY = (bucket: string) => `jd:counter:${bucket}`;
 const ACCOUNT_KEY = (id: string) => `jd:account:${id}`;
+/**
+ * Index des comptes.
+ *
+ * Redis n'offre pas d'énumération par motif qui soit sûre en production
+ * (`KEYS` bloque le serveur), donc l'index est tenu à la main à chaque
+ * écriture et à chaque suppression — exactement comme pour les alertes.
+ */
+const ACCOUNT_INDEX = 'jd:accounts';
 const SESSION_KEY = (token: string) => `jd:session:${token}`;
 /** Index des sessions d'un compte, pour pouvoir toutes les révoquer d'un coup. */
 const ACCOUNT_SESSIONS_KEY = (accountId: string) => `jd:account-sessions:${accountId}`;
@@ -164,7 +172,10 @@ export function createRedisStore(): OfferStore {
     },
 
     async saveAccount(account) {
-      await redis.set(ACCOUNT_KEY(account.id), account);
+      const pipeline = redis.pipeline();
+      pipeline.set(ACCOUNT_KEY(account.id), account);
+      pipeline.sadd(ACCOUNT_INDEX, account.id);
+      await pipeline.exec();
     },
 
     async getAccount(id) {
@@ -172,7 +183,27 @@ export function createRedisStore(): OfferStore {
     },
 
     async deleteAccount(id) {
-      await redis.del(ACCOUNT_KEY(id));
+      const pipeline = redis.pipeline();
+      pipeline.del(ACCOUNT_KEY(id));
+      pipeline.srem(ACCOUNT_INDEX, id);
+      await pipeline.exec();
+    },
+
+    async listAccounts() {
+      const ids = await redis.smembers(ACCOUNT_INDEX);
+      if (ids.length === 0) return [];
+
+      const accounts = await Promise.all(ids.map((id) => redis.get<Account>(ACCOUNT_KEY(id))));
+      /*
+       * Un identifiant présent dans l'index sans compte derrière est un
+       * reliquat — une suppression interrompue entre les deux ordres. On le
+       * retire au passage plutôt que de le traîner.
+       */
+      const orphelins = ids.filter((_, i) => accounts[i] == null);
+      if (orphelins.length > 0) {
+        await redis.srem(ACCOUNT_INDEX, orphelins[0] as string, ...orphelins.slice(1));
+      }
+      return accounts.filter((a): a is Account => a != null);
     },
 
     async createSession(accountId, ttlSeconds) {

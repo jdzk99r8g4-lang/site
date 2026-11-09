@@ -143,7 +143,7 @@ src/
     └── …               Pages publiques
 ```
 
-### Six décisions structurantes
+### Sept décisions structurantes
 
 **1. Aucune page ne connaît aucune source.** Chaque adaptateur produit du
 `Offer` normalisé ; la source la plus importante du projet a fermé du jour au
@@ -200,6 +200,25 @@ et ne porte **aucune** canonique : les adresses à référencer existent déjà 
 `/metiers/…`, `/villes/…` et `/regions/…`, et donner pour canonique à une page
 filtrée la page non filtrée de même numéro serait faux — une canonique doit
 désigner une adresse qui porte le même contenu.
+
+**7. Trois tâches planifiées, et pas une seule.** La collecte dépend du volume
+du catalogue, les alertes du nombre d'abonnés (un appel réseau chacun, l'un
+après l'autre), le ménage de rien du tout. Enchaînées dans une seule fonction
+au temps borné, les secondes faisaient tuer la première vers quatre ou cinq
+cents abonnés, sans qu'aucune erreur ne l'annonce. Chaque tâche a donc son
+passage : `/api/cron/collect` écrit l'instantané, `/api/cron/alertes` sert un
+lot borné d'abonnés et reprend la file au passage suivant, `/api/cron/menage`
+applique la durée de conservation.
+
+**La durée de conservation est appliquée, pas seulement annoncée.** Un compte
+jamais confirmé est supprimé au bout de trente jours — son lien a expiré, il ne
+peut plus rien devenir, et n'importe qui peut saisir l'adresse de n'importe qui
+sur le formulaire. Un compte confirmé est supprimé après deux ans sans
+connexion, avec un e-mail d'avertissement un mois avant : il porte des offres
+mises de côté et des candidatures notées, et les effacer sans prévenir ferait
+disparaître le travail de quelqu'un pour appliquer une règle qu'il n'a jamais
+lue. Le bouton « Télécharger mes données » de l'espace personnel répond au
+droit d'accès sans attendre qu'une boîte e-mail soit relevée.
 
 ---
 

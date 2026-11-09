@@ -143,11 +143,21 @@ export default function PrivacyPage() {
           pour qu’on ne puisse pas créer un compte avec l’adresse de quelqu’un d’autre.
         </p>
         <p>
-          <strong className="text-ink">Durée de conservation :</strong> jusqu’à la suppression
-          du compte, que vous pouvez déclencher vous-même depuis votre espace. La suppression
-          est immédiate et définitive : compte, sessions, offres enregistrées, candidatures
-          notées et alerte associée sont effacés. Un compte dont l’adresse n’est jamais
-          confirmée reste inactif, le lien expirant au bout de trente jours.
+          <strong className="text-ink">Durée de conservation :</strong> deux ans après votre
+          dernière connexion. Passé ce délai, le compte est supprimé automatiquement, avec vos
+          offres enregistrées, vos candidatures notées et l’alerte associée — nous ne gardons
+          pas de données dont plus personne ne se sert. Un mois avant, un e-mail vous prévient :
+          il suffit de vous connecter une fois pour conserver votre compte.
+        </p>
+        <p>
+          Un compte dont l’adresse n’est jamais confirmée est supprimé au bout de trente jours,
+          à l’expiration de son lien de confirmation. Il ne pourrait plus rien devenir, et
+          n’importe qui pouvant saisir l’adresse de n’importe qui sur le formulaire, la garder
+          reviendrait à conserver la donnée d’un tiers qui n’a rien demandé.
+        </p>
+        <p>
+          Vous pouvez aussi supprimer votre compte vous-même, à tout moment, depuis votre
+          espace. La suppression est alors immédiate et définitive.
         </p>
       </LegalSection>
 
@@ -216,6 +226,12 @@ export default function PrivacyPage() {
           d’opposition et de portabilité, ainsi que du droit de retirer votre consentement à
           tout moment. Pour les alertes, le retrait du consentement se fait en un clic depuis
           n’importe lequel de nos e-mails.
+        </p>
+        <p>
+          <strong className="text-ink">Accès et portabilité :</strong> si vous avez un compte,
+          le bouton « Télécharger mes données » de votre espace vous remet immédiatement, dans
+          un fichier lisible par une machine, tout ce que nous détenons sur vous. Nul besoin de
+          nous écrire ni d’attendre.
         </p>
         <p>
           Pour toute autre demande, écrivez à <Todo>adresse e-mail de contact</Todo>. Nous

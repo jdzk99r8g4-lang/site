@@ -91,6 +91,10 @@ export function createMemoryStore(): OfferStore {
       accounts.delete(id);
     },
 
+    async listAccounts() {
+      return [...accounts.values()];
+    },
+
     async createSession(accountId, ttlSeconds) {
       const token = randomBytes(32).toString('base64url');
       sessions.set(token, { accountId, expiresAt: Date.now() + ttlSeconds * 1000 });
