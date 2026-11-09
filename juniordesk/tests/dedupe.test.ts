@@ -97,3 +97,123 @@ describe('dédoublonnage', () => {
     expect(dedupe([])).toEqual({ offers: [], exactDuplicates: 0, crossDuplicates: 0 });
   });
 });
+
+describe('un même poste décrit par deux sites', () => {
+  /*
+   * Le cas pour lequel le dédoublonnage inter-sources existe. Mesuré avant
+   * correction : seules les variantes de casse et d'espaces étaient
+   * reconnues, et « Analyste M&A (H/F) » — la forme la plus répandue des
+   * annonces françaises — passait pour une offre différente.
+   */
+  const base = offer({ id: 'a', title: 'Analyste M&A' });
+  const meme = (title: string, employer = 'Banque') =>
+    fingerprint(offer({ id: 'b', title, employer: { ...base.employer, name: employer } })) ===
+    fingerprint(base);
+
+  it('ignore la mention de genre, quelle qu’en soit la forme', () => {
+    for (const t of [
+      'Analyste M&A (H/F)',
+      'Analyste M&A H/F',
+      'Analyste M&A (F/H)',
+      'Analyste M&A (H/F/X)',
+      'Analyste M&A h-f',
+    ]) {
+      expect(meme(t), t).toBe(true);
+    }
+  });
+
+  it('ignore le type de contrat mis en tête', () => {
+    for (const t of [
+      'Alternance - Analyste M&A',
+      'Alternance Analyste M&A',
+      'Stage : Analyste M&A',
+      'Offre d’alternance — Analyste M&A',
+    ]) {
+      expect(meme(t), t).toBe(true);
+    }
+  });
+
+  it('ignore la ville répétée dans l’intitulé', () => {
+    for (const t of ['Analyste M&A - Paris', 'Analyste M&A (Paris)', 'Analyste M&A, Paris']) {
+      expect(meme(t), t).toBe(true);
+    }
+  });
+
+  it('ignore la forme juridique de l’employeur', () => {
+    for (const e of ['Banque SAS', 'Banque S.A.S.', 'Groupe Banque', 'BANQUE']) {
+      expect(meme('Analyste M&A', e), e).toBe(true);
+    }
+  });
+
+  it('reconnaît tout cela combiné', () => {
+    expect(meme('Offre d’alternance - Analyste M&A (H/F) - Paris', 'Banque SAS')).toBe(true);
+  });
+
+  it('ne sait pas reconnaître un synonyme, et c’est assumé', () => {
+    /*
+     * Une empreinte compare des chaînes, elle ne comprend pas le français.
+     * Les rapprocher demanderait un dictionnaire de synonymes du métier, qui
+     * se tromperait dans l'autre sens — et un doublon affiché coûte moins
+     * cher au candidat qu'une offre fusionnée à tort, donc disparue.
+     */
+    expect(meme('Analyste Mergers & Acquisitions')).toBe(false);
+  });
+});
+
+describe('ce qui ne doit surtout pas être fusionné', () => {
+  /*
+   * Le contrôle inverse, et le plus important : une empreinte trop large fait
+   * disparaître de vraies offres, ce qui est bien pire qu'un doublon affiché.
+   */
+  const base = offer({ id: 'a', title: 'Analyste M&A' });
+  const distinct = (o: Offer) => fingerprint(o) !== fingerprint(base);
+
+  it('deux contrats différents pour le même intitulé', () => {
+    /*
+     * « Stage - Analyste M&A » et « Alternance - Analyste M&A » chez le même
+     * employeur deviennent le même intitulé une fois le préfixe retiré. C'est
+     * la famille de contrat, entrée dans l'empreinte pour cette raison
+     * précise, qui les sépare à nouveau.
+     */
+    expect(
+      distinct(
+        offer({
+          id: 'b',
+          title: 'Stage - Analyste M&A',
+          contract: { ...base.contract, kinds: ['stage'] },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('un autre poste chez le même employeur', () => {
+    expect(distinct(offer({ id: 'b', title: 'Analyste private equity' }))).toBe(true);
+  });
+
+  it('le même poste dans une autre ville', () => {
+    expect(
+      distinct(
+        offer({ id: 'b', place: { ...base.place, city: 'Lyon', citySlug: 'lyon' } }),
+      ),
+    ).toBe(true);
+  });
+
+  it('le même intitulé chez un autre employeur', () => {
+    expect(
+      distinct(
+        offer({
+          id: 'b',
+          employer: { name: 'Autre Banque', brand: null, siret: null, website: null, size: null },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('un intitulé qui se réduirait à rien reste distinct d’un autre', () => {
+    // Garde-fou : si le nettoyage mangeait tout, toutes les offres d'un même
+    // employeur fusionneraient en une seule.
+    const vide1 = offer({ id: 'b', title: 'Alternance' });
+    const vide2 = offer({ id: 'c', title: 'Analyste M&A' });
+    expect(fingerprint(vide1)).not.toBe(fingerprint(vide2));
+  });
+});

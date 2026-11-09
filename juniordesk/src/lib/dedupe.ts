@@ -13,13 +13,47 @@
  *    commun : il faut une empreinte fondée sur ce que l’offre décrit, pas sur
  *    la façon dont elle est transmise.
  *
- * L’empreinte retenue est « intitulé normalisé + employeur + ville ». Elle est
- * volontairement un peu large : deux postes réellement distincts chez le même
- * employeur, dans la même ville, avec le même intitulé, sont indiscernables
- * pour un candidat de toute façon.
+ * L’empreinte retenue est « intitulé nettoyé + employeur nettoyé + ville +
+ * famille de contrat ». Elle est volontairement un peu large : deux postes
+ * réellement distincts chez le même employeur, dans la même ville, avec le
+ * même intitulé et le même type de contrat, sont indiscernables pour un
+ * candidat de toute façon.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi « nettoyé », et pas seulement « en minuscules »
+ * ---------------------------------------------------------------------------
+ * Une première version comparait les intitulés bruts, à la casse et aux
+ * accents près. Mesuré sur des variantes réalistes du même poste, elle
+ * reconnaissait « analyste m&a » mais pas :
+ *
+ *     Analyste M&A (H/F)              ← la mention est sur une grande part
+ *                                       des annonces françaises
+ *     Alternance - Analyste M&A       ← le type de contrat en préfixe
+ *     Analyste M&A - Paris            ← la ville répétée dans l’intitulé
+ *     Conseil Exemple SAS             ← la forme juridique de l’employeur
+ *
+ * Autrement dit : elle tenait tant qu’une seule source alimentait le site, et
+ * cédait au premier jour où deux sites décrivent le même poste — c’est-à-dire
+ * exactement le cas qu’elle est censée traiter.
+ *
+ * La FAMILLE DE CONTRAT entre dans l’empreinte pour une raison précise : une
+ * fois le préfixe retiré, « Stage - Analyste M&A » et « Alternance - Analyste
+ * M&A » chez le même employeur deviendraient indiscernables alors que ce sont
+ * deux offres différentes. La famille les sépare à nouveau.
+ *
+ * ---------------------------------------------------------------------------
+ * Ce qui reste hors de portée
+ * ---------------------------------------------------------------------------
+ * Une empreinte compare des chaînes ; elle ne comprend pas le français.
+ * « Analyste Mergers & Acquisitions » et « Analyste M&A » désignent le même
+ * poste et resteront deux offres. Les traiter demanderait un dictionnaire de
+ * synonymes du métier, qui se tromperait dans l’autre sens — et un doublon
+ * affiché coûte moins cher au candidat qu’une offre fusionnée à tort, donc
+ * disparue.
  */
 
 import type { Offer } from './offer';
+import { contractGroups } from './offer';
 import { fold } from './taxonomy';
 
 /**
@@ -41,10 +75,91 @@ export interface DedupeReport {
   crossDuplicates: number;
 }
 
+/**
+ * Minuscules et accents retirés, PONCTUATION CONSERVÉE.
+ *
+ * `fold` va plus loin et écrase la ponctuation ; c'est ce qu'il faut pour
+ * comparer des mots, mais pas pour reconnaître des mentions qui tiennent
+ * justement à leur ponctuation, comme « (H/F) ».
+ */
+function softFold(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Mentions qui ne disent rien du poste et varient d’un site à l’autre.
+ *
+ * `(H/F)`, `H/F/X`, `F/H` et leurs variantes ponctuées sont une obligation
+ * d’usage en France, pas une caractéristique de l’offre.
+ */
+const GENDER_MARKER = /\(?\s*\b[hf]\s*[\/·.\-]\s*[fh]\b(\s*[\/·.\-]\s*x\b)?\s*\)?/g;
+
+/** Types de contrat écrits en tête d’intitulé. La famille les porte déjà. */
+const CONTRACT_PREFIX =
+  /^(?:offre\s+(?:d['’ ]\s*)?)?(?:alternance|alternant|alternante|apprentissage|apprenti|apprentie|stage|stagiaire|contrat\s+de\s+professionnalisation|professionnalisation|cdi|cdd|emploi|poste|job)\b[\s:–—\-]*/;
+
+/** Formes juridiques, qu’un site écrit et l’autre non. */
+const LEGAL_FORM = /\b(?:sas|sasu|sarl|eurl|sa|snc|sci|gie|scop|groupe|group|holding)\b/g;
+
+/**
+ * Intitulé réduit à ce qui décrit le poste.
+ *
+ * La ville est passée en argument pour être retirée quand elle est répétée
+ * dans l’intitulé : elle figure déjà dans l’empreinte, et « Analyste M&A -
+ * Paris » ne décrit pas un autre poste que « Analyste M&A ».
+ */
+export function normalizeTitle(title: string, city: string | null): string {
+  /*
+   * L'ordre compte, et il a déjà été pris en défaut : `fold` remplace TOUTE
+   * ponctuation par une espace, si bien que « (H/F) » y devient « h f » et
+   * qu'une expression cherchant la barre oblique ne trouvait plus rien. Les
+   * mentions se retirent donc tant que la ponctuation est là, et le repliage
+   * vient en dernier.
+   */
+  let text = softFold(title).replace(GENDER_MARKER, ' ');
+
+  // Le préfixe peut être répété (« Offre d'alternance - Stage ... »).
+  for (let i = 0; i < 3 && CONTRACT_PREFIX.test(text); i += 1) {
+    text = text.replace(CONTRACT_PREFIX, '');
+  }
+
+  const softCity = city ? softFold(city) : '';
+  if (softCity) {
+    const escaped = softCity.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(`[\\s:–—\\-(,]+${escaped}\\s*\\)?\\s*$`), '');
+  }
+
+  // Et seulement maintenant : toute ponctuation devient une espace, parce
+  // qu'un site écrit « M&A - Paris », un autre « M&A, Paris », un troisième
+  // « M&A (Paris) ».
+  return text
+    .replace(/[^a-z0-9&+]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/** Nom d’employeur réduit à ce qui l’identifie. */
+export function normalizeEmployer(name: string): string {
+  return fold(name)
+    .replace(LEGAL_FORM, ' ')
+    .replace(/[^a-z0-9&]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
 export function fingerprint(offer: Offer): string {
-  const employer = offer.employer.siret ?? fold(offer.employer.name ?? '');
+  /*
+   * Le SIRET d’abord quand on l’a : c’est le seul identifiant d’employeur qui
+   * ne dépende pas de l’orthographe du site qui diffuse l’offre.
+   */
+  const employer = offer.employer.siret ?? normalizeEmployer(offer.employer.name ?? '');
   const city = offer.place.citySlug ?? fold(offer.place.city ?? '');
-  return [fold(offer.title), employer, city].join('|');
+  const groups = contractGroups(offer).join('+');
+  return [normalizeTitle(offer.title, offer.place.city), employer, city, groups].join('|');
 }
 
 export function dedupe(offers: readonly Offer[]): DedupeReport {

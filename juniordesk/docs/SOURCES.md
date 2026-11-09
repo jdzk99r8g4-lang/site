@@ -52,6 +52,35 @@ Travail, et les partenaires qui publient via l'API. Une même offre peut donc
 arriver deux fois sous deux identifiants différents — d'où le dédoublonnage par
 empreinte.
 
+### Dédoublonnage : ce qu'il attrape, ce qu'il laisse passer
+
+L'empreinte inter-sources est « intitulé nettoyé + employeur nettoyé + ville +
+famille de contrat ». Mesuré sur des variantes réalistes d'un même poste :
+
+| Variante | Reconnue |
+|---|---|
+| Casse, accents, espaces superflus | oui |
+| `Analyste M&A (H/F)`, `H/F`, `(F/H)`, `(H/F/X)` | oui |
+| `Alternance - Analyste M&A` (contrat en préfixe) | oui |
+| `Analyste M&A - Paris` (ville répétée) | oui |
+| `Conseil Exemple SAS` (forme juridique) | oui |
+| Même SIRET des deux côtés | oui |
+| `Analyste Mergers & Acquisitions` vs `Analyste M&A` | **non** |
+
+Le dernier cas est hors de portée : une empreinte compare des chaînes, elle ne
+comprend pas le français. Le traiter demanderait un dictionnaire de synonymes
+du métier, qui se tromperait dans l'autre sens. Un doublon affiché coûte moins
+cher au candidat qu'une offre fusionnée à tort, donc disparue.
+
+La **famille de contrat** entre dans l'empreinte pour une raison précise :
+une fois le préfixe retiré, `Stage - Analyste M&A` et `Alternance - Analyste
+M&A` chez le même employeur deviendraient indiscernables alors que ce sont
+deux offres différentes.
+
+Une version antérieure comparait les intitulés bruts : elle tenait tant qu'une
+seule source alimentait le site, et cédait au premier jour où deux sites
+décrivent le même poste — c'est-à-dire exactement le cas qu'elle visait.
+
 ### Licence et rediffusion
 
 La documentation de l'API autorise explicitement à exposer ces offres « for free
