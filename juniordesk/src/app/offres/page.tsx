@@ -78,7 +78,7 @@ export default async function OffersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const { query, selected, page: requestedPage } = parseSearchParams(params);
+  const { query, selected, page: requestedPage, rejectedRegions } = parseSearchParams(params);
 
   const all = await getLiveOffers();
   const facets = buildFacets(all, activeContractGroups());
@@ -149,6 +149,29 @@ export default async function OffersPage({
               créez une alerte
             </Link>{' '}
             pour être prévenu dès qu’une offre y est publiée.
+          </p>
+        ) : null}
+
+        {/*
+          Une région inconnue n'est pas « zéro offre » : c'est une demande à
+          laquelle on ne peut pas répondre. Sans ce message, la page servait
+          le catalogue entier en se présentant comme non filtrée, et le
+          visiteur prenait tout le site pour sa région.
+        */}
+        {rejectedRegions.length > 0 ? (
+          <p
+            role="status"
+            className="mt-5 rounded-card border border-warn/40 bg-warn-bg p-4 text-sm text-muted"
+          >
+            <strong className="font-semibold text-warn">
+              {rejectedRegions.join(', ')} : région inconnue.
+            </strong>{' '}
+            Ce critère a été ignoré — les offres ci-dessous ne sont donc pas filtrées par
+            région.{' '}
+            <Link href="/regions" className="text-accent underline">
+              Voir les régions
+            </Link>
+            .
           </p>
         ) : null}
 

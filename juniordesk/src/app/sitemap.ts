@@ -13,6 +13,21 @@ export const revalidate = 3600;
  * Deux règles : on n'y met que des pages qui existent réellement et portent du
  * contenu, et jamais une page de ville vide. Déclarer des URL creuses est le
  * moyen le plus rapide de se faire déclasser.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi aucune page `?page=2`
+ * ---------------------------------------------------------------------------
+ * Choix délibéré, et non un oubli. Chaque offre est déclarée ici
+ * individuellement (`offerPages` plus bas) : aucune ne dépend d'une page de
+ * liste pour être découverte. Les pages suivantes d'une liste ne portent donc
+ * aucun contenu qui ne soit déjà déclaré, elles restent parcourables par les
+ * liens du paginateur, et les déclarer reviendrait à proposer au moteur des
+ * adresses supplémentaires pour les mêmes offres.
+ *
+ * Si un jour les offres cessaient d'être déclarées une par une — un catalogue
+ * de dizaines de milliers d'offres rendrait ce plan démesuré — alors les pages
+ * de liste deviendraient le seul chemin et il faudrait les déclarer. C'est le
+ * signal qui doit faire rouvrir cette décision.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const offers = await getLiveOffers();

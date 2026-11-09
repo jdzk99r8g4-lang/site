@@ -112,8 +112,22 @@ Sans elle, rien ne doit être publié.
 
 ## 7. Ouvrir l'indexation — en dernier
 
-- [ ] `NEXT_PUBLIC_ALLOW_INDEXING=true`
-- [ ] Redéploiement, puis `/robots.txt` revérifié
+- [ ] `NEXT_PUBLIC_ALLOW_INDEXING=true` **posée avant la construction**, pas
+      seulement au démarrage du serveur
+- [ ] Redéploiement complet (reconstruction, pas un simple redémarrage)
+- [ ] `/robots.txt` revérifié : il doit autoriser l'exploration
+- [ ] Une page quelconque revérifiée : `<meta name="robots">` doit dire
+      `index, follow`
+
+**Pourquoi insister sur la reconstruction.** Mesuré : en posant la variable au
+seul démarrage, le site a servi `<meta name="robots" content="index, follow">`
+et, au même moment, un `/robots.txt` disant `Disallow: /`. Les balises sont
+calculées à chaque requête, mais `robots.txt` est prérendu à la construction et
+garde la valeur qu'il avait alors. Le site se serait annoncé ouvert à
+l'indexation tout en l'interdisant à la racine — le genre de contradiction qui
+coûte des semaines avant qu'on la remarque.
+
+Vérifier les deux, pas un seul.
 
 ---
 

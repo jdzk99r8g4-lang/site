@@ -39,13 +39,22 @@ export function OfferCard({ offer }: { offer: PublicOffer }) {
         </div>
       </div>
 
+      {/*
+        `line-clamp-3` et `flex-grow` sur le même élément se contredisent :
+        la troncature fixe une hauteur de trois lignes, l'étirement en impose
+        une autre pour égaliser les cartes de la rangée, et `overflow: hidden`
+        laisse alors dépasser une quatrième ligne coupée en deux, qui passait
+        sous les pastilles. La troncature garde donc sa hauteur propre, et
+        c'est la marge automatique du bloc suivant qui pousse le bas de la
+        carte vers le bas.
+      */}
       {offer.description ? (
-        <p className="line-clamp-3 flex-grow text-[13px] leading-[1.5] text-muted">
+        <p className="line-clamp-3 text-[13px] leading-[1.5] text-muted">
           {offer.description}
         </p>
       ) : null}
 
-      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
         {groups.map((group) => (
           <ContractBadge key={group} group={group} />
         ))}

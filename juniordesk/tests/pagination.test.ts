@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PER_PAGE, pageHref, pageWindow, paginate, parsePageParam } from '@/lib/pagination';
+import {
+  CARRIED_PARAMS,
+  PER_PAGE,
+  pageHref,
+  pageWindow,
+  paginate,
+  parsePageParam,
+} from '@/lib/pagination';
 import { hasActiveFilters, isReordered, parseSearchParams } from '@/lib/query-params';
 
 const items = Array.from({ length: 137 }, (_, i) => i + 1);
@@ -229,5 +236,82 @@ describe('tri et indexation', () => {
     const b = paginate(autreOrdre, 2, 3).items;
     expect(a).not.toEqual(b);
     expect(a.filter((x) => b.includes(x))).toHaveLength(0);
+  });
+});
+
+describe('ce que les liens de pages emportent', () => {
+  it('garde les critères de recherche', () => {
+    const href = pageHref('/offres', { metier: 'audit', ville: 'paris', tri: 'city' }, 3);
+    for (const attendu of ['metier=audit', 'ville=paris', 'tri=city', 'page=3']) {
+      expect(href).toContain(attendu);
+    }
+  });
+
+  it('abandonne ce qui n’est pas un critère', () => {
+    /*
+     * `retiree=1` est posé une fois, quand un visiteur suit le lien d'une
+     * offre disparue. Recopié dans les liens du paginateur, le bandeau
+     * « cette offre a été retirée » suivait le visiteur sur les pages 2, 3 et
+     * 4, longtemps après qu'il avait tourné la page.
+     */
+    expect(pageHref('/offres', { retiree: '1' }, 2)).toBe('/offres?page=2');
+    expect(pageHref('/offres', { utm_source: 'x', fbclid: 'y' }, 2)).toBe('/offres?page=2');
+    expect(pageHref('/offres', { metier: 'audit', retiree: '1' }, 2)).toBe(
+      '/offres?metier=audit&page=2',
+    );
+  });
+
+  it('la liste des paramètres emportés ne diverge pas de ceux qui filtrent', () => {
+    /*
+     * `CARRIED_PARAMS` redit des noms que `parseSearchParams` connaît déjà,
+     * pour que la pagination ne dépende pas de la lecture des filtres. Ce
+     * test est le prix de cette duplication : un critère ajouté d'un côté et
+     * pas de l'autre cesserait d'être conservé d'une page à l'autre, en
+     * silence.
+     */
+    const valeurs: Record<string, string> = {
+      metier: 'audit',
+      type: 'alternance',
+      ville: 'paris',
+      region: 'ile-de-france',
+      q: 'analyste',
+      debut_avant: '2027-01-01',
+      tri: 'city',
+    };
+    // Tout paramètre qui change la sélection doit être emporté.
+    for (const [nom, valeur] of Object.entries(valeurs)) {
+      const vide = parseSearchParams({});
+      const avec = parseSearchParams({ [nom]: valeur });
+      const change = JSON.stringify(avec.selected) !== JSON.stringify(vide.selected);
+      expect(change, `${nom} doit être lu par parseSearchParams`).toBe(true);
+      expect(CARRIED_PARAMS, `${nom} doit être emporté d'une page à l'autre`).toContain(nom);
+    }
+    // Et rien d'autre ne doit l'être.
+    expect([...CARRIED_PARAMS].sort()).toEqual(Object.keys(valeurs).sort());
+  });
+});
+
+describe('région inconnue', () => {
+  it('est signalée au lieu d’être ignorée en silence', () => {
+    /*
+     * Écartée sans rien dire, la page servait le catalogue entier en se
+     * présentant comme non filtrée : le visiteur croyait voir les offres de
+     * sa région et voyait tout le site.
+     */
+    const r = parseSearchParams({ region: 'ile-de-fronce' });
+    expect(r.rejectedRegions).toEqual(['ile-de-fronce']);
+    expect(r.query.regions).toEqual([]);
+  });
+
+  it('une région connue n’est pas signalée', () => {
+    const r = parseSearchParams({ region: 'ile-de-france' });
+    expect(r.rejectedRegions).toEqual([]);
+    expect(r.query.regions).toEqual(['ile-de-france']);
+  });
+
+  it('sépare le bon grain de l’ivraie quand les deux sont demandés', () => {
+    const r = parseSearchParams({ region: ['ile-de-france', 'narnia'] });
+    expect(r.query.regions).toEqual(['ile-de-france']);
+    expect(r.rejectedRegions).toEqual(['narnia']);
   });
 });

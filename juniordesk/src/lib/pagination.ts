@@ -148,6 +148,34 @@ export function pageWindow(page: number, pageCount: number, span = 1): (number |
 }
 
 /**
+ * Paramètres recopiés d'une page à l'autre.
+ *
+ * Liste fermée, et c'est le point : tout ce qui n'est pas un critère de
+ * recherche est abandonné en changeant de page.
+ *
+ * Sans cette liste, `pageHref` recopiait l'URL entière. `?retiree=1` — posé
+ * une fois, quand un visiteur suit le lien d'une offre disparue — se
+ * retrouvait sur les pages 2, 3, 4, et le bandeau « cette offre a été
+ * retirée » suivait le visiteur alors qu'il avait tourné la page depuis
+ * longtemps. Même chose pour n'importe quel paramètre de suivi collé à
+ * l'adresse : il se propageait dans tous les liens du paginateur.
+ *
+ * Les noms doivent rester ceux que lit `parseSearchParams`. Ils sont redits
+ * ici plutôt qu'importés pour ne pas faire dépendre la pagination de la
+ * lecture des filtres, et `tests/pagination.test.ts` vérifie que les deux
+ * listes ne divergent pas.
+ */
+export const CARRIED_PARAMS: readonly string[] = [
+  'metier',
+  'type',
+  'ville',
+  'region',
+  'q',
+  'tri',
+  'debut_avant',
+];
+
+/**
  * Construit l'adresse d'une page en conservant les filtres.
  *
  * Le paramètre `page` est retiré pour la page 1 : `/offres` et
@@ -162,7 +190,7 @@ export function pageHref(
   const search = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    if (key === 'page' || value === undefined) continue;
+    if (value === undefined || !CARRIED_PARAMS.includes(key)) continue;
     for (const one of Array.isArray(value) ? value : [value]) {
       if (one.length > 0) search.append(key, one);
     }

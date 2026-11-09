@@ -36,6 +36,17 @@ export interface ParsedQuery {
   query: OfferQuery;
   /** Page demandée, au moins 1. Bornée plus tard, une fois le total connu. */
   page: number;
+  /**
+   * Valeurs de `region` qui ne correspondent à aucune région française.
+   *
+   * Elles sont écartées du filtrage — on ne va pas chercher une région qui
+   * n'existe pas — mais la page doit le dire. Les écarter en silence
+   * donnait une liste complète présentée comme non filtrée : le visiteur
+   * croyait voir les offres de sa région et voyait tout le catalogue. Une
+   * ville inconnue, elle, a toujours eu droit à son « aucune offre à X » ;
+   * il n'y avait aucune raison de traiter les régions autrement.
+   */
+  rejectedRegions: string[];
   /** Valeurs à réinjecter dans le formulaire, déjà nettoyées. */
   selected: {
     families: string[];
@@ -76,7 +87,9 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
   ];
 
   const allowedRegions = new Set(REGIONS.map((r) => r.slug));
-  const regions = [...new Set(list(params['region']).filter((r) => allowedRegions.has(r)))];
+  const askedRegions = [...new Set(list(params['region']))];
+  const regions = askedRegions.filter((r) => allowedRegions.has(r));
+  const rejectedRegions = askedRegions.filter((r) => !allowedRegions.has(r));
 
   const q = one(params['q']).slice(0, 80);
   const rawSort = one(params['tri']);
@@ -94,6 +107,7 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
 
   return {
     page,
+    rejectedRegions,
     query: {
       families,
       groups,
