@@ -167,9 +167,9 @@ liste d'exclusions explicite qui tient l'immobilier et la qualité industrielle
 rempliraient le site de postes d'usine.
 
 **6. Les listes sont paginées par l'URL, pas par un bouton « voir plus ».**
-Mesuré sur le jeu de démonstration : 128 Ko de HTML pour vingt offres, soit
-environ 6,4 Ko par offre, donc une page de l'ordre de 12 Mo à deux mille
-offres. Vingt-quatre offres par page (`OFFERS_PER_PAGE`), et chaque page a sa
+Mesuré sur le jeu de démonstration en servant la même page avec 2, 6, 12 puis
+20 offres : la relation est linéaire, environ 3,3 Ko par offre sur un coût fixe
+de 62 Ko, donc une page d'environ 6,5 Mo à deux mille offres. Vingt-quatre offres par page (`OFFERS_PER_PAGE`), et chaque page a sa
 propre adresse : elle se partage, se met en favori, fonctionne sans
 JavaScript comme le reste des filtres, et se parcourt. Un bouton « voir plus »
 laisse tout ce qui suit la première fournée hors de portée d'un moteur.

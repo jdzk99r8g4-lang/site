@@ -6,8 +6,10 @@ description: Construire, lancer et piloter JuniorDesk pour observer un changemen
 # Vérifier JuniorDesk à l'exécution
 
 Le projet est un paquet npm autonome dans `juniordesk/`, à l'intérieur d'un
-dépôt qui en contient d'autres. Toutes les commandes se lancent **depuis
-`juniordesk/`**, jamais depuis la racine.
+dépôt qui en contient d'autres. Toutes les commandes se lancent **depuis le
+dossier qui contient `package.json`** — dans le dépôt, `juniordesk/`, jamais la
+racine. (Dans une copie de test, ce dossier peut déjà être la racine : fie-toi
+à l'emplacement de `package.json`, pas au nom du dossier.)
 
 ## Lancer
 
@@ -27,6 +29,13 @@ Deux variables qui changent ce qu'on observe :
   incomplètes), et on ne peut rien observer des règles d'indexation propres à
   une page. Ne jamais confondre ce `noindex` global avec celui d'une page.
 
+  Attention : passée au démarrage, cette variable n'agit que sur les balises
+  `<meta robots>`. **`robots.txt` est prérendu au build** et continuera de
+  répondre `Disallow: /`. Mesuré : balises `index, follow` et `robots.txt`
+  `Disallow: /` servis en même temps. C'est sans importance pour observer les
+  règles par page, mais si c'est `robots.txt` qu'on vérifie, il faut
+  reconstruire avec la variable.
+
 Aucune clé API n'est nécessaire : sans `LBA_API_KEY`, le site sert un jeu de
 vingt offres d'exemple, suffisant pour tout piloter.
 
@@ -42,6 +51,30 @@ const ctx = await b.newContext({ javaScriptEnabled: false });
 
 Chromium est préinstallé : `require('playwright')` et `chromium.launch()`
 fonctionnent sans option ni installation.
+
+### Le cache peut te faire décrire une page qui n'est plus servie
+
+Les listes sont en ISR (`export const revalidate = 3600`). Le rendu est gardé,
+**et il survit à l'arrêt du serveur** : il est écrit dans `.next`, pas
+seulement dans `.next/cache`, donc ni un redémarrage ni `rm -rf .next/cache` ne
+le reprennent. Changer une variable d'environnement puis relancer ne suffit
+donc pas à voir son effet.
+
+Pour forcer un rendu neuf, ajouter un paramètre inutilisé et unique :
+`/offres?zz=$RANDOM`. Les paramètres inconnus ne filtrent rien, mais chaque
+adresse distincte est une entrée de cache distincte.
+
+Constaté en mesurant le poids de la page : quatre valeurs différentes de
+`OFFERS_PER_PAGE` renvoyaient toutes exactement 70 142 octets. Un chiffre
+identique à l'octet près d'une mesure à l'autre n'est pas un résultat stable,
+c'est une réponse en cache.
+
+### Une mesure par serveur, et un port par serveur
+
+En enchaînant plusieurs serveurs sur le même port, le contrôle de
+disponibilité répond avant que le précédent soit mort : toutes les mesures
+décrivent alors le premier, sans que rien ne le signale. Donner un port
+distinct à chaque mesure coûte une ligne et supprime le problème.
 
 ### Pièges de lecture constatés
 

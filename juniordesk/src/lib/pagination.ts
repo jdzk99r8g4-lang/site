@@ -5,10 +5,21 @@
  * Pourquoi c'était nécessaire
  * ---------------------------------------------------------------------------
  * La liste rendait toutes les offres d'un coup. Mesuré sur le jeu de
- * démonstration : 128 Ko de HTML pour 20 offres, soit environ 6,4 Ko par
- * offre. Un catalogue réel de 2 000 offres aurait produit une page de
- * l'ordre de 12 Mo — illisible en 4G, et probablement un dépassement de délai
- * côté serveur avant même d'arriver au navigateur.
+ * démonstration, en servant la même page avec 2, 6, 12 puis 20 offres :
+ *
+ *     2 offres →  70 273 o      12 offres → 104 939 o
+ *     6 offres →  84 407 o      20 offres → 131 421 o
+ *
+ * La relation est linéaire : environ 3,3 Ko par offre, sur un coût fixe de
+ * l'ordre de 62 Ko (en-tête, filtres, pied de page). Un catalogue réel de
+ * 2 000 offres produirait donc une page d'environ 6,5 Mo — illisible en 4G, et
+ * probablement un dépassement de délai côté serveur avant même d'arriver au
+ * navigateur.
+ *
+ * Une première estimation divisait le poids total par le nombre d'offres et
+ * concluait à 6,4 Ko par offre, donc 12 Mo : presque le double. Elle comptait
+ * le coût fixe autant de fois qu'il y a d'offres. C'est la pente qui projette,
+ * pas la moyenne.
  *
  * ---------------------------------------------------------------------------
  * Pagination par URL, et pas un bouton « voir plus »
