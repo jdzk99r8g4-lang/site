@@ -139,12 +139,28 @@ describe('double opt-in', () => {
       email: 'etudiant@exemple.fr',
       families: ['banque-detail-credit', 'metier-inexistant'],
       groups: ['alternance', 'invente' as never],
-      cities: ['paris', 'PAS VALIDE !!'],
+      cities: ['paris', '!!!', '75008'],
     });
     const stored = await getStore().getSubscription(subscriptionId('etudiant@exemple.fr'));
     expect(stored?.families).toEqual(['banque-detail-credit']);
     expect(stored?.groups).toEqual(['alternance']);
+    // Ce qui ne peut pas être une ville est écarté.
     expect(stored?.cities).toEqual(['paris']);
+  });
+
+  it('comprend une ville tapée comme on l’écrit', async () => {
+    /*
+     * L'ancienne version passait en minuscules puis écartait ce qui n'avait
+     * pas la forme d'un slug : « Saint-Étienne » disparaissait EN SILENCE et
+     * l'alerte était créée sans aucune ville. La personne recevait alors les
+     * offres de toute la France en croyant n'avoir demandé que les siennes.
+     */
+    await subscribe({
+      email: 'stephanois@exemple.fr',
+      cities: ['Saint-Étienne', 'ST ETIENNE', 'Paris 8e'],
+    });
+    const stored = await getStore().getSubscription(subscriptionId('stephanois@exemple.fr'));
+    expect(stored?.cities).toEqual(['saint-etienne', 'paris']);
   });
 });
 

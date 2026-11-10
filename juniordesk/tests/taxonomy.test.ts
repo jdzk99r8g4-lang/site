@@ -174,3 +174,101 @@ describe('verticales que ROME ne distingue pas', () => {
     }
   });
 });
+
+describe('intitulés réalistes, sans code ROME', () => {
+  const familles = (title: string) => matchFamilies({ title, romeCodes: [] }).families;
+
+  it('reconnaît l’esperluette quelle que soit son écriture', () => {
+    /*
+     * « Analyste M & A » et « Fusions & Acquisitions » étaient écartés : les
+     * mots-clés disent « m&a » et « fusions acquisitions », et l'esperluette
+     * entourée d'espaces ne correspondait à aucun des deux.
+     */
+    for (const t of ['Analyste M&A', 'Analyste M & A', 'Analyste Fusions & Acquisitions', 'Analyste Fusions-Acquisitions']) {
+      expect(familles(t), t).toEqual(['fusions-acquisitions']);
+    }
+  });
+
+  it('reconnaît un mot-clé au pluriel', () => {
+    // Les mots-clés sont au singulier et comparés sur des mots entiers.
+    expect(familles('Gestionnaire sinistres')).toEqual(['assurance-actuariat']);
+    expect(familles('Analyste paiements')).toEqual(['fintech-paiements']);
+    expect(familles('Analyste risques')).toEqual(['risques-conformite']);
+  });
+
+  it('range les métiers qui manquaient', () => {
+    const attendus: Record<string, string> = {
+      'Analyste Corporate Finance': 'fusions-acquisitions',
+      Structureur: 'marches-financiers',
+      'Analyste quantitatif': 'marches-financiers',
+      'Analyste buy-side': 'gestion-actifs',
+      'Chargé d’études actuarielles': 'assurance-actuariat',
+      'Assistant fiscal': 'fiscalite',
+      'Chargé de recouvrement': 'banque-detail-credit',
+    };
+    for (const [titre, famille] of Object.entries(attendus)) {
+      expect(familles(titre), titre).toContain(famille);
+    }
+  });
+
+  it('une exclusion ne déborde pas sur un mot qui la contient', () => {
+    /*
+     * Les exclusions étaient cherchées comme sous-chaînes : « syndic », le
+     * syndic de copropriété, écartait « syndication », un métier de banque
+     * d'investissement.
+     */
+    expect(familles('Analyste syndication')).toEqual(['banque-investissement']);
+    expect(familles('Syndic de copropriété')).toEqual([]);
+  });
+
+  it('le crédit immobilier n’est pas de l’immobilier', () => {
+    /*
+     * « immobilier » était exclu tout court, alors que « crédit immobilier »
+     * est un mot-clé de la banque de détail. L'exclusion passant en premier,
+     * le mot-clé ne pouvait jamais s'appliquer : l'un des intitulés les plus
+     * courants de la banque était écarté par une règle écrite pour les agents
+     * immobiliers.
+     */
+    expect(familles('Conseiller en crédit immobilier')).toEqual(['banque-detail-credit']);
+    expect(familles('Analyste investissement immobilier')).toEqual(['gestion-actifs']);
+    expect(familles('Agent immobilier')).toEqual([]);
+    expect(familles('Conseiller immobilier')).toEqual([]);
+    expect(familles('Négociateur immobilier')).toEqual([]);
+  });
+
+  it('un audit qui n’est pas financier est écarté, où que soit le mot', () => {
+    /*
+     * La liste énumérait des paires exactes. « Auditeur énergétique » n'y
+     * figurait pas et passait pour un auditeur financier.
+     */
+    for (const t of [
+      'Auditeur énergétique',
+      'Auditeur en efficacité énergétique',
+      'Auditeur qualité',
+      'Auditeur interne qualité',
+      'Auditeur sécurité des systèmes',
+    ]) {
+      expect(familles(t), t).toEqual([]);
+    }
+  });
+
+  it('un auditeur financier reste retenu, même dans un secteur technique', () => {
+    expect(familles('Auditeur financier')).toEqual(['audit']);
+    expect(familles('Auditeur financier — secteur énergie')).toEqual(['audit']);
+    expect(familles('Assistant commissaire aux comptes')).toEqual(['audit']);
+  });
+
+  it('les métiers hors finance restent dehors', () => {
+    for (const t of [
+      'Analyste programmeur',
+      'Conseiller clientèle télécom',
+      'Gestionnaire de paie',
+      'Assistant RH',
+      'Contrôleur qualité',
+      'Assistant de gestion',
+      'Chargé d’études quantitatives marketing',
+    ]) {
+      expect(familles(t), t).toEqual([]);
+    }
+  });
+});

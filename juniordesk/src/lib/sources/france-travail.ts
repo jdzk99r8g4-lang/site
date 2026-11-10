@@ -51,7 +51,7 @@ import { matchFamilies } from '../taxonomy';
 import { isSafeApplyUrl } from '../apply-url';
 import { brand } from '../brand';
 import { assessSeniority, type ExperienceSignal } from '../seniority';
-import { parseAddress } from '../geo';
+import { parseAddress, parseDepartementLabel } from '../geo';
 import { offerSlug } from '../slug';
 
 /** À confirmer auprès de France Travail — voir l’avertissement ci-dessus. */
@@ -299,9 +299,23 @@ export function normalizeFtOffer(raw: FtOffer, collectedAt: string): Offer | nul
   }
 
   const id = `france-travail::${partnerJobId}`;
-  const place = parseAddress(
-    [raw.lieuTravail?.libelle, raw.lieuTravail?.codePostal].filter(Boolean).join(' ') || null,
-  );
+  /*
+   * Le lieu arrive en deux champs : un libellé (« 75 - PARIS 08 ») et un code
+   * postal. Mis bout à bout, la ville se retrouve AVANT le code postal — et
+   * l'analyse d'adresse, qui la cherchait après, ne trouvait jamais rien :
+   * toutes les offres de cette source arrivaient sans ville, donc absentes
+   * du filtre par ville et des pages de ville. Le libellé seul sert de repli
+   * quand le code postal manque.
+   */
+  const libelle = raw.lieuTravail?.libelle ?? null;
+  const joined = parseAddress([libelle, raw.lieuTravail?.codePostal].filter(Boolean).join(' ') || null);
+  const fromLabel = parseDepartementLabel(libelle);
+  const place = {
+    city: joined.city ?? fromLabel.city,
+    citySlug: joined.citySlug ?? fromLabel.citySlug,
+    postalCode: joined.postalCode,
+    departement: joined.departement ?? fromLabel.departement,
+  };
 
   return {
     id,

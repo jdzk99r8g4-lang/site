@@ -51,7 +51,23 @@ export function applyQuery(
   const groups = new Set(query.groups ?? []);
   const cities = new Set(query.cities ?? []);
   const regions = new Set(query.regions ?? []);
-  const needle = query.q ? normalize(query.q) : null;
+  const needles = query.q ? searchTokens(query.q) : [];
+
+  /*
+   * Régions « précisées » : celles où se trouve au moins une des villes
+   * cochées. Le rattachement d'une ville à sa région se lit dans le catalogue
+   * lui-même — une ville sans offre ne précise donc rien, et la région reste
+   * entière, ce qui est le bon repli : on ne vide pas un résultat au nom
+   * d'une ville qu'on ne sait pas situer.
+   */
+  const refinedRegions = new Set<string>();
+  if (cities.size > 0 && regions.size > 0) {
+    for (const offer of offers) {
+      if (!offer.place.citySlug || !cities.has(offer.place.citySlug)) continue;
+      const region = regionOf(offer.place.departement);
+      if (region && regions.has(region.slug)) refinedRegions.add(region.slug);
+    }
+  }
 
   const filtered = offers.filter((offer) => {
     // Une offre expirée ne doit jamais apparaître, quels que soient les
@@ -61,11 +77,32 @@ export function applyQuery(
 
     if (families.size > 0 && !offer.families.some((f) => families.has(f))) return false;
     if (groups.size > 0 && !contractGroups(offer).some((g) => groups.has(g))) return false;
-    if (cities.size > 0 && (!offer.place.citySlug || !cities.has(offer.place.citySlug))) return false;
-
-    if (regions.size > 0) {
+    /*
+     * Le lieu : une ville PRÉCISE sa région, ou S'AJOUTE à elle.
+     *
+     * Deux gestes différents se font avec les mêmes cases, et les deux doivent
+     * marcher :
+     *
+     *  - « Île-de-France », puis « Puteaux » : on resserre. Le résultat est
+     *    Puteaux, pas toute l'Île-de-France ;
+     *  - « Île-de-France », puis « Lyon » : on élargit. Le résultat est
+     *    l'Île-de-France ET Lyon.
+     *
+     * Une première version cumulait strictement les deux critères : le second
+     * geste ne renvoyait rien, puisqu'aucune offre n'est à la fois à Lyon et
+     * en Île-de-France — une page vide, sans explication. La seconde version
+     * les additionnait sans distinction : c'est alors le premier geste qui ne
+     * faisait plus rien, cocher Puteaux laissant les huit offres de la région.
+     *
+     * La règle : une région cochée compte entière, sauf si l'une des villes
+     * cochées s'y trouve — elle est alors réduite à ces villes-là.
+     */
+    if (cities.size > 0 || regions.size > 0) {
+      const inCity = offer.place.citySlug !== null && cities.has(offer.place.citySlug);
       const region = regionOf(offer.place.departement);
-      if (!region || !regions.has(region.slug)) return false;
+      const inWholeRegion =
+        region !== null && regions.has(region.slug) && !refinedRegions.has(region.slug);
+      if (!inCity && !inWholeRegion) return false;
     }
 
     if (query.startsAfter || query.startsBefore) {
@@ -77,12 +114,7 @@ export function applyQuery(
       }
     }
 
-    if (needle) {
-      const haystack = normalize(
-        [offer.title, offer.employer.name ?? '', offer.employer.brand ?? '', offer.place.city ?? ''].join(' '),
-      );
-      if (!haystack.includes(needle)) return false;
-    }
+    if (needles.length > 0 && !matchesSearch(offer, needles)) return false;
 
     return true;
   });
@@ -109,12 +141,26 @@ export function sortOffers(offers: readonly Offer[], key: SortKey): Offer[] {
       );
     case 'recent':
     default:
-      return copy.sort((a, b) => {
-        const left = a.publishedAt ? Date.parse(a.publishedAt) : 0;
-        const right = b.publishedAt ? Date.parse(b.publishedAt) : 0;
-        return right - left || tieBreak(a, b);
-      });
+      return copy.sort((a, b) => publishedTime(b) - publishedTime(a) || tieBreak(a, b));
   }
+}
+
+/**
+ * Date de publication, en millisecondes ; zéro si elle est absente ou illisible.
+ *
+ * Le « ou illisible » n'est pas une précaution de principe. `Date.parse`
+ * renvoie `NaN` sur une date mal formée, et une comparaison qui renvoie `NaN`
+ * n'est plus un ordre : le tri ne plaçait pas seulement mal l'offre fautive,
+ * il rendait faux l'ordre de TOUTES les autres. Mesuré sur quatre offres dont
+ * une à la date illisible : « a b c d » au lieu de « c a d b » — c'est-à-dire
+ * l'ordre des identifiants, plus du tout celui des dates. Une seule date mal
+ * formée dans le catalogue suffisait à ce que « les plus récentes d'abord »
+ * mente à tout le monde, sans la moindre erreur.
+ */
+function publishedTime(offer: Offer): number {
+  if (!offer.publishedAt) return 0;
+  const time = Date.parse(offer.publishedAt);
+  return Number.isFinite(time) ? time : 0;
 }
 
 /** Tri secondaire stable : sans lui, deux rendus successifs peuvent différer. */
@@ -217,11 +263,83 @@ function buildRegionFacets(offers: readonly Offer[]): Facet[] {
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'fr'));
 }
 
-function normalize(text: string): string {
+/* ---------------------------------------------------------------------------
+ * Recherche libre
+ * ---------------------------------------------------------------------------
+ * La recherche cherchait la saisie telle quelle, comme une sous-chaîne du
+ * texte de l'offre. Quatre défauts mesurés en découlaient :
+ *
+ *  - « analyste paris » ne trouvait rien : les deux mots existent, mais pas
+ *    côte à côte, l'intitulé et la ville étant séparés par l'employeur. Toute
+ *    recherche de plus d'un mot échouait dès que les mots n'étaient pas
+ *    contigus et dans le bon ordre ;
+ *  - « M&A » trouvait « Team Analyst » : l'esperluette devenait une espace,
+ *    et « m a » se lit dans « tea-M A-nalyst » ;
+ *  - « it » trouvait « crédit » et « auditeur » : n'importe quel morceau de
+ *    mot faisait l'affaire ;
+ *  - « fusions » ne trouvait pas une offre « Analyste M&A » pourtant rangée
+ *    dans la famille « Fusions-acquisitions » : le métier n'était pas cherché.
+ *
+ * La saisie est donc découpée en mots, et CHAQUE mot doit commencer un mot de
+ * l'offre — dans n'importe quel ordre. « contr gest » trouve « Contrôleur de
+ * gestion », « audit lyon » trouve un auditeur à Lyon, et « it » ne trouve
+ * plus que ce qui commence par « it ».
+ */
+
+/** Minuscules, sans accent ; l'esperluette est conservée. */
+function searchFold(text: string): string {
   return text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+/**
+ * Mots d'un texte.
+ *
+ * « M & A » et « M&A » doivent donner le même mot, donc l'esperluette est
+ * d'abord resserrée. Mais « Fusions & Acquisitions » doit aussi se trouver en
+ * cherchant « acquisitions » : le texte d'une offre est donc découpé sous les
+ * deux formes, resserrée et séparée.
+ */
+function wordsOf(text: string, both: boolean): string[] {
+  const folded = searchFold(text);
+  const split = (t: string) => t.replace(/[^a-z0-9&]+/g, ' ').trim().split(' ').filter(Boolean);
+  const compact = split(folded.replace(/\s*&\s*/g, '&'));
+  if (!both) return compact;
+  return [...new Set([...compact, ...split(folded.replace(/&/g, ' '))])];
+}
+
+/**
+ * Mots de la saisie.
+ *
+ * Un mot d'une seule lettre est ignoré : il commencerait la moitié du
+ * catalogue et ne filtrerait rien d'utile.
+ */
+export function searchTokens(q: string): string[] {
+  return wordsOf(q, false).filter((token) => token.length >= 2);
+}
+
+function matchesSearch(offer: Offer, tokens: readonly string[]): boolean {
+  /*
+   * Le libellé des familles fait partie du texte cherché : une offre
+   * « Analyste LBO » doit sortir quand on cherche « private equity », parce
+   * que c'est ainsi que le site lui-même la range.
+   */
+  const familyLabels = offer.families.map(
+    (slug) => JOB_FAMILIES.find((f) => f.slug === slug)?.label ?? '',
+  );
+
+  const words = wordsOf(
+    [
+      offer.title,
+      offer.employer.name ?? '',
+      offer.employer.brand ?? '',
+      offer.place.city ?? '',
+      ...familyLabels,
+    ].join(' '),
+    true,
+  );
+
+  return tokens.every((token) => words.some((word) => word.startsWith(token)));
 }

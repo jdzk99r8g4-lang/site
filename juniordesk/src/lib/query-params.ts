@@ -14,7 +14,7 @@ import { DEFAULT_SORT } from './filters';
 import { allFamilySlugs } from './taxonomy';
 import { REGIONS } from './regions';
 import { parsePageParam } from './pagination';
-import { slugify } from './slug';
+import { citySlugFromInput } from './geo';
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -81,7 +81,10 @@ export function parseSearchParams(params: RawSearchParams): ParsedQuery {
   const cities = [
     ...new Set(
       list(params['ville'])
-        .map((c) => slugify(c, 8))
+        // Même nettoyage que pour les adresses des offres : « paris 8e »,
+        // « Paris 75008 » et « St Etienne » doivent trouver ce qu'ils veulent
+        // dire. Voir `citySlugFromInput`.
+        .map((c) => citySlugFromInput(c) ?? '')
         .filter((c) => /^[a-z0-9-]{2,60}$/.test(c)),
     ),
   ];

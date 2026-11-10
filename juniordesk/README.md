@@ -220,6 +220,34 @@ disparaître le travail de quelqu'un pour appliquer une règle qu'il n'a jamais
 lue. Le bouton « Télécharger mes données » de l'espace personnel répond au
 droit d'accès sans attendre qu'une boîte e-mail soit relevée.
 
+### Ce que la recherche et les filtres font exactement
+
+Mesuré sur des cas réalistes, puis fixé par des tests (`tests/search.test.ts`,
+`tests/geo.test.ts`, `tests/regions.test.ts`, `tests/taxonomy.test.ts`).
+
+**Recherche.** La saisie est découpée en mots, et chaque mot doit *commencer*
+un mot de l'offre, dans n'importe quel ordre. « analyste paris » trouve un
+analyste à Paris, « contr gest » trouve « Contrôleur de gestion », « M&A » ne
+se lit plus dans « tea**M A**nalyst ». Le texte cherché comprend l'intitulé,
+l'employeur, la ville et le libellé du métier où le site range l'offre.
+
+**Lieu.** Une ville cochée *précise* sa région ou *s'y ajoute* : « Île-de-
+France » puis « Puteaux » donne Puteaux, « Île-de-France » puis « Lyon » donne
+les deux. Les autres critères se cumulent avec le lieu.
+
+**Villes.** Une seule normalisation pour les adresses des offres et pour ce
+que tape le visiteur : les arrondissements sont rattachés à leur ville
+(« PARIS 8E ARRONDISSEMENT »), la graphie postale est développée
+(« ST ETIENNE »), La Défense est rangée où elle est, et la ville est cherchée
+avant le code postal quand elle n'est pas après.
+
+**Tri.** Une date de publication illisible vaut « pas de date » et passe en
+dernier. Elle ne peut plus dérégler l'ordre des autres offres.
+
+**Limite connue : les communes homonymes.** Saint-Denis en Seine-Saint-Denis et
+Saint-Denis de La Réunion partagent le même identifiant de ville, donc le même
+filtre et la même page. La région les départage ; l'identifiant, non.
+
 ---
 
 ## Configuration

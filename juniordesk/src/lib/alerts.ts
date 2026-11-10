@@ -23,6 +23,7 @@ import { isPlausibleEmail } from './email-address';
 import { allowSend } from './send-limit';
 import { confirmationMail, digestMail } from './email/templates';
 import { allFamilySlugs, familyBySlug } from './taxonomy';
+import { citySlugFromInput } from './geo';
 
 // Réexporté : `tests/alerts.test.ts` et la route d'inscription s'en servent.
 export { isPlausibleEmail } from './email-address';
@@ -344,7 +345,15 @@ function sanitizeCities(cities: readonly string[] | undefined): string[] {
   return [
     ...new Set(
       (cities ?? [])
-        .map((c) => c.trim().toLowerCase())
+        /*
+         * Même nettoyage que le filtre de la liste. L'ancienne version se
+         * contentait de passer en minuscules puis d'écarter ce qui n'avait
+         * pas la forme d'un slug : « Saint-Étienne » était donc écarté EN
+         * SILENCE, et l'alerte créée sans aucune ville — la personne recevait
+         * alors les offres de toute la France en croyant n'avoir demandé que
+         * les siennes.
+         */
+        .map((c) => citySlugFromInput(c) ?? '')
         .filter((c) => /^[a-z0-9-]{2,60}$/.test(c)),
     ),
   ].slice(0, 20);

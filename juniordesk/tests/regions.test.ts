@@ -105,10 +105,42 @@ describe('le cas La Défense', () => {
     ).toEqual(['lyon']);
   });
 
-  it('région et ville se cumulent', () => {
+  it('une ville cochée dans sa région la resserre', () => {
     expect(
       applyQuery(offers, { regions: ['ile-de-france'], cities: ['puteaux'] }, NOW).map((o) => o.id),
     ).toEqual(['puteaux']);
+  });
+
+  it('une ville cochée hors de la région s’y ajoute', () => {
+    /*
+     * Cumulés strictement, « Île-de-France » et « Lyon » ne renvoyaient rien :
+     * aucune offre n'est aux deux endroits. Une page vide, sans explication,
+     * pour quelqu'un qui demandait simplement « ici ou là ».
+     */
+    const ids = applyQuery(offers, { regions: ['ile-de-france'], cities: ['lyon'] }, NOW)
+      .map((o) => o.id)
+      .sort();
+    expect(ids).toContain('lyon');
+    expect(ids).toContain('puteaux');
+    expect(ids).toContain('paris');
+  });
+
+  it('les deux gestes se combinent', () => {
+    // Puteaux resserre l'Île-de-France, Lyon s'y ajoute : Paris sort.
+    const ids = applyQuery(offers, { regions: ['ile-de-france'], cities: ['puteaux', 'lyon'] }, NOW)
+      .map((o) => o.id)
+      .sort();
+    expect(ids).toEqual(['lyon', 'puteaux']);
+  });
+
+  it('une ville inconnue ne vide pas la région', () => {
+    // On ne sait pas la situer : la région reste entière, et la page dit par
+    // ailleurs qu'aucune offre n'existe pour cette ville.
+    const ids = applyQuery(offers, { regions: ['ile-de-france'], cities: ['nulle-part'] }, NOW).map(
+      (o) => o.id,
+    );
+    expect(ids.length).toBeGreaterThan(1);
+    expect(ids).not.toContain('lyon');
   });
 });
 

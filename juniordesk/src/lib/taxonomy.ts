@@ -85,7 +85,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
       'banque de detail', 'banque de reseau', 'charge de clientele bancaire',
       'conseiller bancaire', 'credit manager', 'analyste credit', 'octroi de credit',
       'credit immobilier', 'credit a la consommation', 'affacturage', 'leasing',
-      'credit bail',
+      'credit bail', 'financement immobilier', 'credit management', 'recouvrement',
     ],
   },
   {
@@ -128,7 +128,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     keywords: [
       'm&a', 'fusion acquisition', 'fusions acquisitions', 'fusions et acquisitions',
       'mergers acquisitions', 'mergers and acquisitions', 'conseil en acquisition',
-      'cession d entreprise', 'build up',
+      'cession d entreprise', 'build up', 'corporate finance', 'fusac',
     ],
   },
   {
@@ -155,7 +155,8 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     keywords: [
       'marches financiers', 'salle des marches', 'trading', 'trader', 'sales trading',
       'structuration', 'produits derives', 'derives actions', 'taux et change',
-      'front office', 'equity research', 'analyste actions',
+      'front office', 'equity research', 'analyste actions', 'structureur',
+      'analyste quantitatif', 'recherche quantitative', 'quant', 'sell side',
     ],
   },
   {
@@ -169,7 +170,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     keywords: [
       'gestion d actifs', 'asset management', 'gestion de portefeuille', 'opcvm',
       'gerant de portefeuille', 'multigestion', 'investissement responsable', 'esg',
-      'isr', 'reporting de gestion',
+      'isr', 'reporting de gestion', 'buy side', 'investissement immobilier',
     ],
   },
   {
@@ -187,7 +188,8 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     ],
     keywords: [
       'assurance', 'assureur', 'reassurance', 'courtage en assurance', 'courtier en assurance',
-      'actuariat', 'actuaire', 'souscription', 'souscripteur', 'sinistre', 'indemnisation',
+      'actuariat', 'actuaire', 'actuariel', 'actuarielle', 'souscription', 'souscripteur',
+      'sinistre', 'indemnisation',
       'prevoyance', 'assurance vie', 'iard',
     ],
   },
@@ -292,7 +294,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
       'gestion des risques', 'risques financiers', 'risk management', 'risque de credit',
       'risque operationnel', 'risque de marche', 'conformite', 'compliance',
       'kyc', 'lcb ft', 'lutte anti blanchiment', 'blanchiment', 'controle interne',
-      'deontologie', 'controle permanent',
+      'deontologie', 'controle permanent', 'analyste risque', 'risk analyst', 'risk manager',
     ],
   },
   {
@@ -305,7 +307,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     romeCodes: ['K1911'],
     keywords: [
       'fiscalite', 'fiscaliste', 'droit fiscal', 'fiscalite internationale',
-      'prix de transfert', 'tva', 'contentieux fiscal',
+      'prix de transfert', 'tva', 'contentieux fiscal', 'fiscal', 'fiscale', 'tax',
     ],
   },
   {
@@ -317,7 +319,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
       'technologie.',
     romeCodes: [],
     keywords: [
-      'fintech', 'insurtech', 'regtech', 'neobanque', 'paiement', 'monetique',
+      'fintech', 'insurtech', 'regtech', 'neobanque', 'paiement', 'payment', 'monetique',
       'moyens de paiement', 'open banking', 'actifs numeriques', 'crypto actifs',
       'blockchain finance',
     ],
@@ -380,7 +382,7 @@ const EXCLUDE_KEYWORDS: readonly string[] = [
   'assurance qualite', 'assurance produit', 'ingenieur qualite', 'responsable qualite',
   'audit qualite', 'auditeur qualite', 'audit energetique', 'audit technique',
   'audit environnemental', 'audit de securite', 'audit industriel', 'audit informatique',
-  'immobilier', 'immobiliere', 'syndic', 'copropriete', 'gestion locative',
+  'syndic', 'copropriete', 'gestion locative',
   'assurance maladie', 'securite sociale', 'caisse d allocations',
   'controle technique', 'controleur technique',
   'hote de caisse', 'hotesse de caisse', 'encaissement',
@@ -424,10 +426,104 @@ export function allFamilySlugs(): string[] {
   return JOB_FAMILIES.map((f) => f.slug);
 }
 
+/* ---------------------------------------------------------------------------
+ * Comparer un intitulé à un mot-clé
+ * ---------------------------------------------------------------------------
+ * Trois défauts ont été mesurés sur des intitulés réalistes, et tous les
+ * trois venaient de la façon de comparer, pas des listes de mots :
+ *
+ *  - « Analyste M & A » et « Fusions & Acquisitions » étaient écartés : les
+ *    mots-clés disent « m&a » et « fusions acquisitions », et l'esperluette
+ *    entourée d'espaces ne correspondait à aucun des deux. Un intitulé est
+ *    donc comparé sous deux formes — esperluette resserrée (« m&a ») et
+ *    esperluette retirée (« fusions acquisitions »).
+ *
+ *  - « Gestionnaire sinistres », « Analyste paiements », « Analyste risques »
+ *    étaient écartés : les mots-clés sont au singulier et la comparaison se
+ *    fait sur des mots entiers. Le « s » final est donc retiré des deux
+ *    côtés, de la même façon, ce qui rend la comparaison indifférente au
+ *    pluriel sans rien changer d'autre.
+ *
+ *  - Les EXCLUSIONS, elles, étaient cherchées comme sous-chaînes : « syndic »
+ *    (le syndic de copropriété) écartait « Analyste syndication », un métier
+ *    de banque d'investissement. Elles sont désormais comparées sur des mots
+ *    entiers, comme les inclusions.
+ */
+
+/** Retire le « s » final des mots de plus de trois lettres. « process » est épargné. */
+function singular(folded: string): string {
+  return folded
+    .split(' ')
+    .map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w))
+    .join(' ');
+}
+
+/** Les formes sous lesquelles un intitulé est comparé, entourées d'espaces. */
+function variants(title: string): string[] {
+  const base = fold(title);
+  const compact = base.replace(/\s*&\s*/g, '&');
+  const spaced = base.replace(/\s*&\s*/g, ' ');
+  return [...new Set([compact, spaced])].map((v) => ` ${singular(v)} `);
+}
+
+/** Le mot-clé figure-t-il, en mots entiers, dans l'une des formes ? */
+function hasKeyword(forms: readonly string[], keyword: string): boolean {
+  const needle = ` ${singular(fold(keyword).replace(/\s*&\s*/g, '&'))} `;
+  return forms.some((form) => form.includes(needle));
+}
+
+/** Mots de l'intitulé, au singulier, pour les règles qui raisonnent par mot. */
+function wordSet(title: string): Set<string> {
+  return new Set(singular(fold(title).replace(/\s*&\s*/g, ' ')).split(' ').filter(Boolean));
+}
+
+/**
+ * L'immobilier : exclu, sauf quand l'intitulé dit lui-même qu'il s'agit de
+ * finance.
+ *
+ * La liste d'exclusions portait « immobilier » tout court, et la famille
+ * « banque de détail » portait le mot-clé « crédit immobilier ». L'exclusion
+ * passant en premier, le mot-clé ne pouvait JAMAIS s'appliquer : « Conseiller
+ * en crédit immobilier », l'un des intitulés les plus courants de la banque
+ * de détail, était écarté par une règle écrite pour les agents immobiliers.
+ */
+const REAL_ESTATE_WORDS: readonly string[] = ['immobilier', 'immobiliere'];
+const REAL_ESTATE_OVERRIDES: readonly string[] = [
+  'credit', 'financement', 'financier', 'financiere', 'investissement', 'asset',
+  'fond', 'fund', 'analyste', 'comptable', 'comptabilite',
+];
+
+/**
+ * L'audit : exclu quand son objet n'est pas financier.
+ *
+ * Les mots « audit » et « auditeur » retiennent à eux seuls une offre, et la
+ * liste d'exclusions énumérait des paires exactes (« audit énergétique »,
+ * « auditeur qualité »). Une paire oubliée suffisait : « Auditeur
+ * énergétique » passait pour un auditeur financier. La règle raisonne
+ * maintenant sur l'objet de l'audit, où qu'il soit dans l'intitulé.
+ */
+const AUDIT_WORDS: readonly string[] = ['audit', 'auditeur', 'auditrice'];
+const NON_FINANCIAL_AUDIT: readonly string[] = [
+  'energetique', 'energie', 'qualite', 'environnemental', 'environnementale',
+  'environnement', 'securite', 'surete', 'industriel', 'industrielle', 'informatique',
+  'technique', 'thermique', 'batiment', 'hygiene', 'hse', 'qse', 'qhse', 'iso',
+];
+const FINANCIAL_AUDIT_MARKERS: readonly string[] = [
+  'financier', 'financiere', 'comptable', 'legal', 'commissariat', 'commissaire', 'bancaire',
+];
+
 /** Vrai si l'intitulé porte un terme d'exclusion. */
 export function isExcludedByKeyword(title: string): boolean {
-  const folded = fold(title);
-  return EXCLUDE_KEYWORDS.some((kw) => folded.includes(fold(kw)));
+  const forms = variants(title);
+  if (EXCLUDE_KEYWORDS.some((kw) => hasKeyword(forms, kw))) return true;
+
+  const words = wordSet(title);
+  const has = (list: readonly string[]) => list.some((w) => words.has(w));
+
+  if (has(REAL_ESTATE_WORDS) && !has(REAL_ESTATE_OVERRIDES)) return true;
+  if (has(AUDIT_WORDS) && has(NON_FINANCIAL_AUDIT) && !has(FINANCIAL_AUDIT_MARKERS)) return true;
+
+  return false;
 }
 
 /**
@@ -437,11 +533,9 @@ export function isExcludedByKeyword(title: string): boolean {
  * retenue.
  */
 export function hasFinanceKeyword(title: string): boolean {
-  const padded = ` ${fold(title)} `;
-  if (GENERIC_FINANCE_KEYWORDS.some((kw) => padded.includes(` ${fold(kw)} `))) return true;
-  return JOB_FAMILIES.some((family) =>
-    family.keywords.some((kw) => padded.includes(` ${fold(kw)} `)),
-  );
+  const forms = variants(title);
+  if (GENERIC_FINANCE_KEYWORDS.some((kw) => hasKeyword(forms, kw))) return true;
+  return JOB_FAMILIES.some((family) => family.keywords.some((kw) => hasKeyword(forms, kw)));
 }
 
 export interface MatchResult {
@@ -473,10 +567,10 @@ export function matchFamilies(input: {
 
   // Les mots-clés s'appliquent toujours, pas seulement en l'absence de code.
   // C'est ce qui rend visibles les verticales que ROME ne distingue pas.
-  const padded = ` ${fold(input.title)} `;
+  const forms = variants(input.title);
   const fromKeyword = new Set<string>();
   for (const family of JOB_FAMILIES) {
-    if (family.keywords.some((kw) => padded.includes(` ${fold(kw)} `))) {
+    if (family.keywords.some((kw) => hasKeyword(forms, kw))) {
       fromKeyword.add(family.slug);
     }
   }
@@ -487,7 +581,7 @@ export function matchFamilies(input: {
     // Rien de précis, mais un intitulé manifestement financier : on retient
     // plutôt que de perdre l'offre, et on la range par défaut en direction
     // financière, la famille la plus transverse.
-    if (GENERIC_FINANCE_KEYWORDS.some((kw) => padded.includes(` ${fold(kw)} `))) {
+    if (GENERIC_FINANCE_KEYWORDS.some((kw) => hasKeyword(forms, kw))) {
       return { families: ['direction-financiere'], via: 'keyword' };
     }
     return { families: [], via: null };

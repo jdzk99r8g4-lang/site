@@ -117,3 +117,39 @@ describe('les contrats qui portent leur niveau ne passent pas l’épreuve', () 
     expect(o).not.toBeNull();
   });
 });
+
+describe('lieu de travail', () => {
+  /*
+   * Le lieu arrive en deux champs. Mis bout à bout, la ville se retrouvait
+   * AVANT le code postal, et l'analyse d'adresse la cherchait après : toutes
+   * les offres de cette source arrivaient sans ville, donc absentes du filtre
+   * par ville et des pages de ville.
+   */
+  const alternance = (lieu: Record<string, unknown>) =>
+    normalizeFtOffer(
+      offre({
+        alternance: true,
+        natureContrat: 'Contrat d’apprentissage',
+        intitule: 'Alternance — Chargé de clientèle bancaire',
+        lieuTravail: lieu,
+      }),
+      COLLECTE,
+    );
+
+  it('lit la ville dans un libellé « département - commune »', () => {
+    const o = alternance({ libelle: '75 - PARIS 08', codePostal: '75008' });
+    expect(o?.place.city).toBe('Paris');
+    expect(o?.place.citySlug).toBe('paris');
+    expect(o?.place.departement).toBe('75');
+  });
+
+  it('lit la ville dans un libellé simple', () => {
+    expect(alternance({ libelle: 'Paris', codePostal: '75002' })?.place.city).toBe('Paris');
+  });
+
+  it('se passe du code postal quand il manque', () => {
+    const o = alternance({ libelle: '69 - LYON 03' });
+    expect(o?.place.city).toBe('Lyon');
+    expect(o?.place.departement).toBe('69');
+  });
+});
