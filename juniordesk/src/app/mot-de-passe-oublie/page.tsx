@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { brand } from '@/lib/brand';
+import { ServiceUnavailable } from '@/components/service-unavailable';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,7 @@ export default async function ForgotPasswordPage({
   return (
     <main className="mx-auto max-w-xl px-5 py-10 sm:px-6">
       <h1 className="text-2xl font-extrabold sm:text-3xl">Mot de passe oublié</h1>
+      <ServiceUnavailable params={params} />
       <p className="mt-2 text-sm text-muted">
         Indiquez l’adresse de votre compte. Nous vous enverrons un lien pour choisir un
         nouveau mot de passe.

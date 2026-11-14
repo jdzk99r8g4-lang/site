@@ -86,6 +86,14 @@ export function Pager({
 }
 
 /** Ligne « Offres 25 à 48 sur 137 », au-dessus de la grille. */
+/*
+ * Le compteur est un titre de niveau 2, pas un paragraphe.
+ *
+ * Les cartes d'offres portent des titres de niveau 3. Sans rien entre le titre
+ * de la page et elles, la structure sautait de h1 à h3 sur toutes les listes :
+ * un lecteur d'écran, qui navigue de titre en titre, ne trouvait aucune
+ * section « résultats » et tombait directement sur la première offre.
+ */
 export function PageCount({
   from,
   to,
@@ -100,16 +108,16 @@ export function PageCount({
 }) {
   if (total === 0) {
     return (
-      <p className="mt-6 mb-3.5 text-[15px] font-bold" aria-live="polite">
+      <h2 className="mt-6 mb-3.5 text-[15px] font-bold" aria-live="polite">
         Aucune offre
-      </p>
+      </h2>
     );
   }
 
   const range = from === to ? `Offre ${from}` : `Offres ${from} à ${to}`;
 
   return (
-    <p className="mt-6 mb-3.5 text-[15px] font-bold" aria-live="polite">
+    <h2 className="mt-6 mb-3.5 text-[15px] font-bold" aria-live="polite">
       {total <= to && from === 1 ? (
         <>
           {total} offre{total === 1 ? '' : 's'}
@@ -122,6 +130,6 @@ export function PageCount({
       {filteredFrom !== undefined && filteredFrom !== total ? (
         <span className="font-normal text-muted"> (catalogue : {filteredFrom})</span>
       ) : null}
-    </p>
+    </h2>
   );
 }

@@ -7,11 +7,12 @@
 
 import { NextResponse } from 'next/server';
 import { deleteOwnAccount } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/mon-espace', async (request: Request) => {
   const form = await request.formData();
 
   // Confirmation explicite : la case doit être cochée. Un bouton seul se
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
   const deleted = await deleteOwnAccount();
   return NextResponse.redirect(
-    new URL(deleted ? '/?compte=supprime' : '/connexion', request.url),
+    new URL(deleted ? '/compte/supprime' : '/connexion', request.url),
     303,
   );
-}
+});

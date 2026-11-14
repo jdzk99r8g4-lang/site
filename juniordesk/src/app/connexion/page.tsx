@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { isGoogleEnabled } from '@/lib/google';
 import { GoogleButton } from '@/components/google-button';
+import { ServiceUnavailable } from '@/components/service-unavailable';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,7 @@ export default async function LoginPage({
   return (
     <main className="mx-auto max-w-xl px-5 py-10 sm:px-6">
       <h1 className="text-2xl font-extrabold sm:text-3xl">Se connecter</h1>
+      <ServiceUnavailable params={params} />
 
       {verified ? (
         <p role="status" className="mt-6 rounded-card border border-accent/40 bg-accent-bg p-4 text-sm">

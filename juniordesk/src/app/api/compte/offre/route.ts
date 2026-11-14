@@ -7,11 +7,12 @@
 
 import { NextResponse } from 'next/server';
 import { currentAccount, toggleApplication, toggleSavedOffer } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/mon-espace', async (request: Request) => {
   const account = await currentAccount();
   if (!account) {
     return NextResponse.redirect(new URL('/connexion', request.url), 303);
@@ -35,4 +36,4 @@ export async function POST(request: Request) {
    */
   const safeBack = back.startsWith('/') && !back.startsWith('//') ? back : '/offres';
   return NextResponse.redirect(new URL(safeBack, request.url), 303);
-}
+});

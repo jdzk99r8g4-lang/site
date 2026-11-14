@@ -8,11 +8,12 @@
 
 import { NextResponse } from 'next/server';
 import { logout } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/', async (request: Request) => {
   await logout();
   return NextResponse.redirect(new URL('/', request.url), 303);
-}
+});

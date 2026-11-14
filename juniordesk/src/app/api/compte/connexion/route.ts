@@ -8,11 +8,12 @@
 
 import { NextResponse } from 'next/server';
 import { login } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/connexion', async (request: Request) => {
   const form = await request.formData();
   const email = String(form.get('email') ?? '');
   const password = String(form.get('motdepasse') ?? '');
@@ -31,4 +32,4 @@ export async function POST(request: Request) {
       : 'identifiants',
   );
   return NextResponse.redirect(url, 303);
-}
+});

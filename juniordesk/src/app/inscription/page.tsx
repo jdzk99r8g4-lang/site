@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { brand } from '@/lib/brand';
 import { currentAccount, MIN_PASSWORD_LENGTH } from '@/lib/auth';
 import { GoogleButton } from '@/components/google-button';
+import { ServiceUnavailable } from '@/components/service-unavailable';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,7 @@ export default async function SignUpPage({
   return (
     <main className="mx-auto max-w-xl px-5 py-10 sm:px-6">
       <h1 className="text-2xl font-extrabold sm:text-3xl">Créer un compte</h1>
+      <ServiceUnavailable params={params} />
       <p className="mt-2 text-sm text-muted">
         Gratuit, et sans contrepartie : {brand.name} ne vend rien aux étudiants et ne revend
         aucune donnée. Un compte sert à mettre des offres de côté, à noter celles où vous avez

@@ -5,6 +5,7 @@ import { getLiveOffers } from '@/lib/offers';
 import { buildFacets } from '@/lib/filters';
 import { activeContractGroups } from '@/lib/sources';
 import { JOB_FAMILIES } from '@/lib/taxonomy';
+import { ServiceUnavailable } from '@/components/service-unavailable';
 
 export const revalidate = 3600;
 
@@ -58,6 +59,7 @@ export default async function AlertsPage({
   return (
     <main className="mx-auto max-w-3xl px-5 py-8 sm:px-6">
       <h1 className="text-2xl font-extrabold sm:text-3xl">Alertes e-mail</h1>
+      <ServiceUnavailable params={params} />
       <p className="mt-2 text-sm text-muted">
         Une seule adresse, vos critères, et vous recevez les nouvelles offres dès qu’elles sont
         collectées. Pas de compte, pas de mot de passe, désinscription en un clic.
@@ -116,9 +118,9 @@ export default async function AlertsPage({
         <fieldset className="mt-6">
           <legend className="text-[15px] font-bold">Métiers</legend>
           <p className="mt-1 text-[13px] text-muted">Laissez vide pour toute la finance.</p>
-          <div className="mt-3 grid gap-x-5 gap-y-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-x-5 gap-y-0.5 sm:grid-cols-2">
             {JOB_FAMILIES.map((family) => (
-              <label key={family.slug} className="flex cursor-pointer items-center gap-2.5 text-[13.5px]">
+              <label key={family.slug} className="flex min-h-9 cursor-pointer items-center gap-2.5 text-[13.5px]">
                 <input
                   type="checkbox"
                   name="metier"
@@ -135,9 +137,9 @@ export default async function AlertsPage({
           <fieldset className="mt-6">
             <legend className="text-[15px] font-bold">Villes</legend>
             <p className="mt-1 text-[13px] text-muted">Laissez vide pour toute la France.</p>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-0.5">
               {facets.cities.slice(0, 24).map((city) => (
-                <label key={city.value} className="flex cursor-pointer items-center gap-2.5 text-[13.5px]">
+                <label key={city.value} className="flex min-h-9 cursor-pointer items-center gap-2.5 text-[13.5px]">
                   <input
                     type="checkbox"
                     name="ville"

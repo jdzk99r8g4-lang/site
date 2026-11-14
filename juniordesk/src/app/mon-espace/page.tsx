@@ -8,6 +8,7 @@ import { getStore } from '@/lib/store';
 import { describeCriteria } from '@/lib/alerts';
 import { OfferCard } from '@/components/offer-card';
 import { formatDate } from '@/components/offer-card';
+import { ServiceUnavailable } from '@/components/service-unavailable';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,7 @@ export default async function MySpacePage({
     <main className="mx-auto max-w-[1140px] px-5 py-10 sm:px-6">
       {/* Pas de bouton de déconnexion ici : l'en-tête en porte déjà un. */}
       <h1 className="text-2xl font-extrabold sm:text-3xl">Mon espace</h1>
+      <ServiceUnavailable params={params} />
       <p className="mt-1.5 text-sm text-muted">{account.email}</p>
 
       {welcome ? (

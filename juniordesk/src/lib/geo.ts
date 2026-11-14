@@ -185,6 +185,20 @@ export function citySlug(city: string): string {
 }
 
 /**
+ * Nom lisible reconstruit depuis un slug : « saint-etienne » → « Saint-Etienne »,
+ * « le-havre » → « Le Havre ».
+ *
+ * Sert là où l'on n'a QUE le slug — les critères d'une alerte, par exemple.
+ * Ils étaient affichés tels quels : « vous recevrez les offres correspondant
+ * à : paris ». Les accents ne peuvent pas être retrouvés, mais la casse et
+ * l'article initial, si.
+ */
+export function cityLabelFromSlug(slug: string): string {
+  const label = titleCase(slug.replace(/-/g, ' ')).replace(/\s+/g, '-');
+  return label.replace(/^(Le|La|Les)-/, '$1 ');
+}
+
+/**
  * Slug d'une ville telle qu'un visiteur la tape.
  *
  * Passe par le même nettoyage que les adresses des offres : c'est ce qui fait

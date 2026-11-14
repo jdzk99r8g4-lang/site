@@ -81,7 +81,7 @@ distinct à chaque mesure coûte une ligne et supprime le problème.
 Plusieurs fausses alertes sont venues de motifs `grep` trop étroits, pas du
 code. Extraire le texte rendu plutôt que deviner le balisage :
 
-- le compteur est un `<p aria-live="polite">`, et il a **deux formulations** :
+- le compteur est un `<h2 aria-live="polite">`, et il a **deux formulations** :
   « Offres 1 à 6 sur 20 » quand la liste dépasse une page, « 20 offres » quand
   tout tient dessus. Un motif qui n'attend que la première conclut à tort que
   le compteur a disparu ;

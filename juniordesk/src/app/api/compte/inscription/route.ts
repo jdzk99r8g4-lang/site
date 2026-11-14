@@ -7,11 +7,12 @@
 
 import { NextResponse } from 'next/server';
 import { register } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/inscription', async (request: Request) => {
   const form = await request.formData();
   const email = String(form.get('email') ?? '');
   const password = String(form.get('motdepasse') ?? '');
@@ -31,4 +32,4 @@ export async function POST(request: Request) {
 
   url.searchParams.set('etat', result.simulated ? 'simule' : 'envoye');
   return NextResponse.redirect(url, 303);
-}
+});

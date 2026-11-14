@@ -9,11 +9,12 @@
 
 import { NextResponse } from 'next/server';
 import { resetPassword } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/mot-de-passe-oublie', async (request: Request) => {
   const form = await request.formData();
   const token = String(form.get('jeton') ?? '');
   const password = String(form.get('motdepasse') ?? '');
@@ -42,4 +43,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.redirect(new URL('/connexion?motdepasse=change', request.url), 303);
-}
+});

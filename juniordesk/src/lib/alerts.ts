@@ -23,7 +23,7 @@ import { isPlausibleEmail } from './email-address';
 import { allowSend } from './send-limit';
 import { confirmationMail, digestMail } from './email/templates';
 import { allFamilySlugs, familyBySlug } from './taxonomy';
-import { citySlugFromInput } from './geo';
+import { cityLabelFromSlug, citySlugFromInput } from './geo';
 
 // Réexporté : `tests/alerts.test.ts` et la route d'inscription s'en servent.
 export { isPlausibleEmail } from './email-address';
@@ -312,7 +312,7 @@ export function describeCriteria(subscription: {
   }
 
   if (subscription.cities.length > 0) {
-    parts.push(subscription.cities.join(', '));
+    parts.push(subscription.cities.map(cityLabelFromSlug).join(', '));
   } else {
     parts.push('toute la France');
   }

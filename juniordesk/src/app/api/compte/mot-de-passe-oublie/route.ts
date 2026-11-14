@@ -6,11 +6,12 @@
 
 import { NextResponse } from 'next/server';
 import { requestPasswordReset } from '@/lib/auth';
+import { guarded } from '@/lib/form-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = guarded('/mot-de-passe-oublie', async (request: Request) => {
   const form = await request.formData();
   const email = String(form.get('email') ?? '');
 
@@ -24,4 +25,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.redirect(url, 303);
-}
+});
