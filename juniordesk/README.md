@@ -220,6 +220,23 @@ disparaître le travail de quelqu'un pour appliquer une règle qu'il n'a jamais
 lue. Le bouton « Télécharger mes données » de l'espace personnel répond au
 droit d'accès sans attendre qu'une boîte e-mail soit relevée.
 
+### Thème
+
+Fond sombre `#141413`, texte `#faf9f5`, gris `#b0aea5`, et trois accents —
+orange `#d97757`, bleu `#6a9bcc`, vert `#788c5d` — qui sont aussi les couleurs
+des trois familles de contrat (poste junior, alternance, stage). Poppins pour
+les titres et l'interface, Lora pour le texte courant.
+
+Tout est défini une fois, dans `src/app/globals.css` : changer une valeur là
+change le site entier. Deux familles de valeurs sont dérivées de la palette et
+non tirées d'elle — les niveaux de fond d'une interface sombre, et l'ambre des
+avertissements, sans lequel une erreur aurait la couleur d'une confirmation.
+
+Les polices sont servies par le site (`@fontsource`), jamais par un service
+tiers : aucune requête ne part ailleurs au chargement d'une page, ce que
+promet la politique de confidentialité et qu'impose la politique de sécurité
+du contenu.
+
 ### Ce que la recherche et les filtres font exactement
 
 Mesuré sur des cas réalistes, puis fixé par des tests (`tests/search.test.ts`,

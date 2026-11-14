@@ -1,46 +1,80 @@
 @import 'tailwindcss';
 
 /*
- * Jetons de design — reprise du brouillon junior-desk.vercel.app.
+ * Polices servies par le site lui-même.
  *
- * Thème sombre verdâtre, accent vert pour les éléments de marque et les
- * badges, orange pour l'appel à l'action principal. Les trois familles de
- * contrat ont chacune leur couleur, et c'est structurant : vert pour le
- * stage, bleu pour l'alternance, ambre pour le poste junior. Un candidat
- * balaie une liste de vingt offres et doit distinguer les types au coup d'œil,
- * sans lire.
+ * Elles viennent de paquets npm et non d'un service de polices : aucune
+ * requête ne part vers un tiers quand une page se charge. C'est ce que
+ * promet la politique de confidentialité, et c'est ce que la politique de
+ * sécurité du contenu impose (`font-src 'self'`).
+ */
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+@import '@fontsource/poppins/800.css';
+@import '@fontsource/lora/400.css';
+@import '@fontsource/lora/400-italic.css';
+@import '@fontsource/lora/600.css';
+
+/*
+ * Jetons de design.
  *
- * Les valeurs sont celles du brouillon, reprises telles quelles pour que les
- * deux versions soient visuellement interchangeables.
+ * Palette : fond sombre #141413, texte clair #faf9f5, gris moyen #b0aea5 pour
+ * le texte secondaire, et trois accents — orange #d97757, bleu #6a9bcc, vert
+ * #788c5d. Typographie : Poppins pour les titres et l'interface, Lora pour le
+ * texte courant.
+ *
+ * Les trois accents ont chacun un rôle, et c'est structurant : les trois
+ * familles de contrat portent chacune le sien — vert pour le stage, bleu pour
+ * l'alternance, orange pour le poste junior. Un candidat balaie une liste de
+ * vingt offres et doit distinguer les types au coup d'œil, sans lire.
+ * L'orange est aussi l'accent principal : liens, sélection, bouton d'action.
+ *
+ * Deux familles de valeurs ne sont PAS dans la palette et en sont dérivées :
+ *
+ *  - les fonds de carte, les filets et le gris tertiaire, qui sont des
+ *    éclaircissements du fond #141413 — une interface sombre a besoin de
+ *    plusieurs niveaux, la palette n'en donne qu'un ;
+ *  - l'ambre des avertissements. La palette n'a pas de couleur d'alerte, et
+ *    un avertissement en orange se confondrait avec l'accent principal : un
+ *    message d'erreur ressemblerait à un message de confirmation.
+ *
+ * Contrastes mesurés sur le fond #141413 : texte clair 18:1, gris moyen
+ * 8,3:1, bleu 6,3:1, orange 6,0:1, gris tertiaire 5,6:1, vert 5,0:1. Tous
+ * au-dessus du seuil de 4,5:1 pour du texte courant. Le texte des boutons
+ * orange est sombre et non clair : le clair n'y atteint que 3:1.
  */
 @theme {
-  --color-bg: #0a0e0b;
-  --color-bg-header: #16261c;
-  --color-bg-hero: #0f1a13;
-  --color-card: #131c15;
-  --color-card-hover: #182219;
-  --color-line: #223028;
-  --color-line-hover: #35493e;
-  --color-ink: #edf1ee;
-  --color-muted: #8fa196;
-  --color-muted-2: #647069;
+  --color-bg: #141413;
+  --color-bg-header: #1c1b19;
+  --color-bg-hero: #191817;
+  --color-card: #1f1e1c;
+  --color-card-hover: #272623;
+  --color-line: #33312d;
+  --color-line-hover: #4a4843;
+  --color-ink: #faf9f5;
+  --color-muted: #b0aea5;
+  --color-muted-2: #8f8d85;
 
-  --color-accent: #6fcf97;
-  --color-accent-strong: #4fd18a;
-  --color-accent-bg: #1c3326;
+  --color-accent: #d97757;
+  --color-accent-strong: #e58b6d;
+  --color-accent-bg: #37261f;
 
-  --color-blue: #7fb8e8;
-  --color-blue-bg: #1c2c38;
-  --color-amber: #e8b45f;
-  --color-amber-bg: #362b18;
-  --color-warn: #d98a5f;
-  --color-warn-bg: #3a2620;
+  --color-green: #788c5d;
+  --color-green-bg: #262a20;
+  --color-blue: #6a9bcc;
+  --color-blue-bg: #232c34;
+  --color-amber: #d97757;
+  --color-amber-bg: #37261f;
+  --color-warn: #e0b04c;
+  --color-warn-bg: #352d1c;
 
-  --color-cta: #e8871e;
-  --color-cta-hover: #ff9c33;
-  --color-cta-ink: #1a1005;
+  --color-cta: #d97757;
+  --color-cta-hover: #e58b6d;
+  --color-cta-ink: #141413;
 
-  --font-sans: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Poppins', Arial, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --radius-card: 14px;
@@ -80,6 +114,23 @@ h2,
 h3 {
   letter-spacing: -0.015em;
   line-height: 1.25;
+}
+
+/*
+ * Lora pour le texte courant, Poppins pour tout le reste.
+ *
+ * Poppins est la police par défaut — titres, boutons, pastilles, navigation,
+ * champs — et seuls les éléments qui portent du texte à lire passent en Lora.
+ * L'inverse aurait demandé de désigner un par un tous les éléments
+ * d'interface, et un lien stylé en bouton aurait hérité de l'empattement du
+ * paragraphe voisin.
+ */
+p,
+dd,
+blockquote,
+ul.list-disc li,
+ol li {
+  font-family: var(--font-serif);
 }
 
 /* Barres de défilement assorties au thème, sur les deux moteurs. */
@@ -157,14 +208,14 @@ input[type='checkbox']:not(.sr-only):checked::after {
   border-radius: 3px;
 }
 
-/* Champs de saisie : fond plus sombre que la carte, halo vert au focus. */
+/* Champs de saisie : fond plus sombre que la carte, halo d'accent au focus. */
 input[type='text'],
 input[type='search'],
 input[type='email'],
 input[type='password'],
 input[type='date'],
 select {
-  background: #0f1712;
+  background: #191817;
   color: var(--color-ink);
   border: 1px solid var(--color-line);
   transition:

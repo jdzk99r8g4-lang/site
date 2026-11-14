@@ -29,11 +29,11 @@ export default async function HomePage() {
       {/* Héros : le nombre d'offres en gros, parce que c'est la seule promesse
           qu'un agrégateur peut tenir à la seconde où on arrive. */}
       <section className="bg-[radial-gradient(ellipse_at_top,var(--color-bg-hero)_0%,var(--color-bg)_70%)] px-5 pt-13 pb-11 text-center">
-        <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+        <p className="font-sans text-xs font-semibold tracking-wide text-accent uppercase">
           Finance · Banque · Audit · Junior
         </p>
 
-        <p className="mt-4 bg-gradient-to-b from-accent-strong to-accent bg-clip-text text-[58px] leading-none font-extrabold tracking-[-1px] text-transparent">
+        <p className="font-sans mt-4 bg-gradient-to-b from-accent-strong to-accent bg-clip-text text-[58px] leading-none font-extrabold tracking-[-1px] text-transparent">
           {offers.length}
         </p>
         <div className="mt-1 text-[15px] text-muted">
@@ -79,7 +79,7 @@ export default async function HomePage() {
               key={group.value}
               className="rounded-card border border-line bg-card px-3 py-4 shadow-card"
             >
-              <p className="text-2xl font-extrabold">{group.count}</p>
+              <p className="font-sans text-2xl font-extrabold">{group.count}</p>
               <p className="mt-0.5 text-[13px] text-muted">{CONTRACT_GROUP_PLURALS[group.value]}</p>
               {!group.sourced ? (
                 <p className="mt-1 text-[11px] text-warn">source non branchée</p>

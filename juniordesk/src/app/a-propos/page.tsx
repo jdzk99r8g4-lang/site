@@ -75,7 +75,7 @@ export default function AboutPage() {
       {/* Notre histoire */}
       <section className="bg-[radial-gradient(ellipse_at_top,var(--color-bg-hero)_0%,var(--color-bg)_70%)]">
         <div className="mx-auto max-w-3xl px-5 py-14 text-center sm:px-6 sm:py-20">
-          <p className="text-xs font-bold tracking-[0.08em] text-accent uppercase">Notre histoire</p>
+          <p className="font-sans text-xs font-bold tracking-[0.08em] text-accent uppercase">Notre histoire</p>
           <h1 className="mt-4 text-2xl font-extrabold sm:text-4xl">
             Nous savons ce que c’est de chercher sa première chance.
           </h1>
@@ -221,7 +221,7 @@ export default function AboutPage() {
 
         {/* Bienvenue */}
         <section className="mt-14 rounded-card border border-line bg-card p-7 text-center shadow-card sm:p-10">
-          <p className="text-xs font-bold tracking-[0.08em] text-accent uppercase">
+          <p className="font-sans text-xs font-bold tracking-[0.08em] text-accent uppercase">
             Bienvenue sur {brand.name}
           </p>
           <h2 className="mt-3 text-xl font-extrabold sm:text-2xl">
@@ -262,7 +262,7 @@ function Section({
 }) {
   return (
     <section className="mt-14 border-t border-line pt-10 first:mt-10 first:border-0 first:pt-0">
-      <p className="text-xs font-bold tracking-[0.08em] text-accent uppercase">{eyebrow}</p>
+      <p className="font-sans text-xs font-bold tracking-[0.08em] text-accent uppercase">{eyebrow}</p>
       <h2 className="mt-3 text-xl font-extrabold sm:text-2xl">{title}</h2>
       <div className="mt-4 space-y-4 text-[15px] text-muted">{children}</div>
     </section>

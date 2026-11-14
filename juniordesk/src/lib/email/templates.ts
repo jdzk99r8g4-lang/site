@@ -337,19 +337,26 @@ function layout(body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(brand.name)}</title>
 <style>
-  body { margin:0; padding:24px; background:#f6f7f9; color:#15181d;
-         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /*
+   * Mêmes couleurs que le site, sur fond clair : une messagerie affiche mieux
+   * un message clair, et beaucoup forcent leur propre fond. Les polices sont
+   * celles de repli — Arial et Georgia — parce qu'une messagerie ne charge pas
+   * de police distante, et qu'on n'en demande aucune à un tiers.
+   */
+  body { margin:0; padding:24px; background:#faf9f5; color:#141413;
+         font-family: Lora, Georgia, serif;
          font-size:16px; line-height:1.55; }
   .card { max-width:600px; margin:0 auto; background:#ffffff; border-radius:12px;
-          padding:28px; border:1px solid #e4e7ec; }
-  h1 { font-size:20px; margin:0 0 12px; }
+          padding:28px; border:1px solid #e8e6dc; }
+  h1 { font-family: Poppins, Arial, sans-serif; font-size:20px; margin:0 0 12px; }
   ul { padding-left:18px; }
   li { margin-bottom:14px; }
-  a { color:#16507d; }
-  .btn { display:inline-block; background:#16507d; color:#ffffff !important; padding:11px 18px;
+  a { color:#a8492c; }
+  .btn { display:inline-block; background:#d97757; color:#141413 !important; padding:11px 18px;
+         font-family: Poppins, Arial, sans-serif;
          border-radius:8px; text-decoration:none; font-weight:600; }
-  .muted { color:#5a6372; font-size:14px; }
-  hr { border:none; border-top:1px solid #e4e7ec; margin:22px 0; }
+  .muted { color:#6b6962; font-size:14px; }
+  hr { border:none; border-top:1px solid #e8e6dc; margin:22px 0; }
 </style></head>
 <body><div class="card">${body}</div></body></html>`;
 }
