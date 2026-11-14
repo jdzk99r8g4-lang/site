@@ -108,7 +108,15 @@ h3 {
  * Cases à cocher personnalisées : rondes, sombres, verrouillées en gris plein
  * une fois cochées. Reprises du brouillon.
  */
-input[type='checkbox'] {
+/*
+ * `:not(.sr-only)` n'est pas décoratif. Les pastilles de filtre portent une
+ * case masquée par la classe `sr-only`, mais cette feuille n'est dans aucune
+ * couche : elle l'emporte donc sur les utilitaires de Tailwind, et sa largeur
+ * de 17 px comme sa position remettaient la case « masquée » dans le flux.
+ * Invisible, elle réservait quand même sa place : chaque pastille avait un
+ * vide à gauche et son texte n'était plus centré.
+ */
+input[type='checkbox']:not(.sr-only) {
   -webkit-appearance: none;
   appearance: none;
   width: 17px;
@@ -123,14 +131,14 @@ input[type='checkbox'] {
     background 0.15s ease,
     border-color 0.15s ease;
 }
-input[type='checkbox']:hover {
+input[type='checkbox']:not(.sr-only):hover {
   border-color: var(--color-line-hover);
 }
-input[type='checkbox']:checked {
+input[type='checkbox']:not(.sr-only):checked {
   background: var(--color-muted-2);
   border-color: var(--color-muted-2);
 }
-input[type='checkbox']:checked::after {
+input[type='checkbox']:not(.sr-only):checked::after {
   content: '';
   position: absolute;
   top: 50%;

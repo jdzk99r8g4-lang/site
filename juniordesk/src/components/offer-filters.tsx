@@ -97,6 +97,46 @@ export function OfferFilters({
         ) : null}
       </fieldset>
 
+      {/*
+        Sur téléphone, régions et villes se replient derrière un bouton.
+
+        Dépliées, elles occupaient plus d'un écran : il fallait faire défiler
+        environ 1 300 px avant de voir la première offre, et davantage encore
+        avec un vrai catalogue, qui compte plus de régions et de villes que le
+        jeu de démonstration. Sur ordinateur rien ne change, tout reste visible.
+
+        Une case à cocher masquée et son libellé plutôt qu'un script : le
+        dépliage fonctionne sans JavaScript, comme le reste des filtres, et la
+        page ne « saute » pas au chargement. La case n'a pas de `name` : elle
+        ne part pas avec le formulaire. Elle est cochée d'avance quand un lieu
+        est déjà choisi, pour qu'un filtre actif ne soit jamais caché.
+      */}
+      <input
+        type="checkbox"
+        id="filtres-lieu-bascule"
+        className="peer sr-only"
+        aria-controls="filtres-lieu"
+        defaultChecked={selected.regions.length > 0 || selected.cities.length > 0}
+      />
+      <label
+        htmlFor="filtres-lieu-bascule"
+        className="inline-flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-line bg-card px-3.5 py-2.5 text-[13.5px] font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent sm:hidden"
+      >
+        <span>
+          Région et ville
+          {selected.regions.length + selected.cities.length > 0 ? (
+            <span className="text-accent">
+              {' '}
+              ({selected.regions.length + selected.cities.length})
+            </span>
+          ) : null}
+        </span>
+        <span aria-hidden="true" className="text-[10px] text-muted">
+          ▼
+        </span>
+      </label>
+
+      <div id="filtres-lieu" className="hidden flex-col gap-3.5 peer-checked:flex sm:flex">
       {facets.regions.length > 0 ? (
         <fieldset>
           <legend className="sr-only">Région</legend>
@@ -212,6 +252,7 @@ export function OfferFilters({
           ) : null}
         </fieldset>
       ) : null}
+      </div>
 
       <div className="flex flex-wrap gap-3">
         {facets.families.length > 0 ? (
