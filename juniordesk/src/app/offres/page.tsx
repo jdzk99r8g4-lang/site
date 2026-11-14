@@ -15,9 +15,8 @@ import { DemoBanner } from '@/components/demo-banner';
 export const revalidate = 3600;
 
 const DESCRIPTION =
-  'Stages, alternances et postes juniors en banque, assurance, gestion d’actifs, ' +
-  'audit, comptabilité, contrôle de gestion et fiscalité. Filtrables par type de ' +
-  'contrat, métier, ville et date de début.';
+  'Stages, alternances et premiers postes en finance, filtrables par type de contrat, ' +
+  'métier, ville, région et date de début.';
 
 /**
  * Chaque page porte sa propre adresse canonique, et non celle de la page 1.
@@ -66,7 +65,8 @@ export async function generateMetadata({
 
   return {
     title: page > 1 ? `Toutes les offres — page ${page}` : 'Toutes les offres',
-    description: DESCRIPTION,
+    // Une description par page : identiques, les pages 2, 3, 4 passaient pour des copies.
+    description: page > 1 ? `Page ${page} — ${DESCRIPTION}` : DESCRIPTION,
     ...(filtered ? {} : { alternates: { canonical: page > 1 ? `/offres?page=${page}` : '/offres' } }),
     ...(keepOut ? { robots: { index: false, follow: true } } : {}),
   };

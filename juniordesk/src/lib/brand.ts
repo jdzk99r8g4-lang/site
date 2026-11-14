@@ -32,8 +32,19 @@ export const brand = {
   pitch:
     'Les offres de stage, d’alternance et de premier poste en banque, ' +
     'assurance, gestion d’actifs, audit et contrôle de gestion, collectées ' +
-    'automatiquement chaque jour. Gratuit, sans compte, et sans candidature à ' +
+    'automatiquement chaque jour. Gratuit, sans compte obligatoire, et sans candidature à ' +
     'passer par nous : on vous envoie directement chez l’employeur.',
+  /**
+   * Description pour les moteurs de recherche.
+   *
+   * Distincte de `pitch`, qui fait 270 caractères : un moteur en affiche
+   * environ 160 et coupe le reste au milieu d'une phrase.
+   */
+  metaDescription:
+    'Stages, alternances et premiers postes en finance : banque, assurance, gestion ' +
+    'd’actifs, audit, contrôle de gestion. Collecte quotidienne, gratuit.',
+  /** Titre de l'accueil. La signature complète (`tagline`) dépasse ce qu'un moteur affiche. */
+  shortTagline: 'Stages, alternances et premiers postes en finance',
   domain: 'juniordesk.fr',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   locale: 'fr-FR',
@@ -64,7 +75,12 @@ export const brand = {
 
   /** Promesses affichées. Elles doivent rester littéralement vraies. */
   promises: [
-    { title: 'Gratuit, sans compte', detail: 'Aucun abonnement, aucune option payante' },
+    /*
+     * « Sans compte » tout court était vrai avant les comptes étudiants. Il
+     * se lisait désormais à côté d'un bouton « S'inscrire » : le compte existe,
+     * il est seulement facultatif, et la promesse doit dire exactement cela.
+     */
+    { title: 'Gratuit, compte facultatif', detail: 'Aucun abonnement, aucune option payante' },
     { title: 'Mis à jour chaque jour', detail: 'Collecte automatique, offres expirées retirées' },
     { title: 'Candidature chez l’employeur', detail: 'Nous ne nous interposons pas, nous redirigeons' },
     { title: 'Aucun traceur', detail: 'Aucune publicité, aucune bannière à cliquer' },

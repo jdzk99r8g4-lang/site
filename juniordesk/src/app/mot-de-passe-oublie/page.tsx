@@ -5,6 +5,7 @@ import { brand } from '@/lib/brand';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
+  description: 'Recevoir un lien pour choisir un nouveau mot de passe.',
   title: 'Mot de passe oublié',
   robots: { index: false, follow: true },
 };

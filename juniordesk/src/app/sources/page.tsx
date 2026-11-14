@@ -4,6 +4,7 @@ import { brand } from '@/lib/brand';
 import { getSnapshot, isDemoMode } from '@/lib/offers';
 import { activeContractGroups } from '@/lib/sources';
 import { CONTRACT_GROUPS, CONTRACT_GROUP_PLURALS } from '@/lib/offer';
+import { JOB_FAMILIES } from '@/lib/taxonomy';
 import { formatDate } from '@/components/offer-card';
 
 export const revalidate = 3600;
@@ -81,16 +82,18 @@ export default async function SourcesPage() {
         <h2 className="text-[15px] font-bold">Comment le périmètre finance est défini</h2>
         <p className="mt-3 text-sm text-muted">
           Par les codes du Répertoire Opérationnel des Métiers et des Emplois (ROME) de France
-          Travail, diffusé en open data sous Licence Ouverte, et non par des mots-clés
-          approximatifs. Neuf familles de métiers sont retenues ; l’immobilier, la qualité
-          industrielle et les organismes de sécurité sociale sont écartés par une liste
-          explicite. Une offre dont le code métier est trop générique est rattrapée par son
-          intitulé, et une offre dont l’intitulé contient un terme disqualifiant est écartée
-          même si un terme financier y figure — « assurance qualité » est un métier d’usine.
+          Travail, diffusé en open data sous Licence Ouverte, complétés par l’intitulé de
+          l’offre. Le code seul ne suffit pas : ce référentiel ne distingue ni le M&amp;A, ni
+          le private equity, ni les transaction services, que seul l’intitulé permet de
+          reconnaître. {JOB_FAMILIES.length} familles de métiers sont retenues ; l’immobilier
+          (hors crédit et investissement immobiliers), la qualité industrielle et les
+          organismes de sécurité sociale sont écartés par des règles explicites. Une offre
+          dont l’intitulé contient un terme disqualifiant est écartée même si un terme
+          financier y figure — « assurance qualité » est un métier d’usine.
         </p>
         <p className="mt-2 text-sm">
           <Link href="/metiers" className="text-accent">
-            Voir les neuf familles →
+            Voir les {JOB_FAMILIES.length} familles →
           </Link>
         </p>
       </section>

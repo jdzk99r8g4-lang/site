@@ -9,10 +9,11 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Les métiers de la finance',
+  // Le nombre est calculé : écrit en toutes lettres, il est resté « neuf »
+  // longtemps après que les familles furent passées à dix-huit.
   description:
-    'Les neuf familles couvertes : banque et crédit, assurance, marchés financiers et ' +
-    'gestion d’actifs, audit et comptabilité, contrôle de gestion, corporate finance et ' +
-    'M&A, trésorerie et risques, fiscalité, back-office.',
+    `Les ${JOB_FAMILIES.length} familles de métiers couvertes : banque, M&A, private equity, ` +
+    'marchés, gestion d’actifs, assurance, audit, comptabilité, contrôle de gestion, risques.',
 };
 
 export default async function JobFamiliesPage() {
@@ -23,10 +24,10 @@ export default async function JobFamiliesPage() {
     <main className="mx-auto max-w-[1140px] px-5 py-8 sm:px-6">
       <h1 className="text-2xl font-extrabold sm:text-3xl">Les métiers couverts</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Le périmètre est défini sur les codes du Répertoire Opérationnel des Métiers et des
-        Emplois (ROME) de France Travail, et non sur des mots-clés approximatifs. Chaque offre
-        collectée est rattachée à une famille par son code métier, puis, à défaut, par son
-        intitulé.
+        Chaque offre collectée est rattachée à une ou plusieurs de ces {JOB_FAMILIES.length}{' '}
+        familles, par son code métier et par son intitulé. L’intitulé compte autant que le
+        code : c’est lui qui distingue le M&amp;A, le private equity ou les transaction
+        services, que le référentiel officiel des métiers ne sépare pas.
       </p>
 
       <ul className="mt-7 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">

@@ -4,7 +4,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { brand } from '@/lib/brand';
 
-const title = `${brand.name} — ${brand.tagline}`;
+const title = `${brand.name} — ${brand.shortTagline}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(brand.url),
@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     default: title,
     template: `%s — ${brand.name}`,
   },
-  description: brand.pitch,
+  description: brand.metaDescription,
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
     siteName: brand.name,
     title,
-    description: brand.pitch,
+    description: brand.metaDescription,
   },
   robots: {
     /*

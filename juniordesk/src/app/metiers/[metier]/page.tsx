@@ -8,6 +8,7 @@ import { CONTRACT_GROUP_PLURALS, groupsLabel, groupsPresent, toPublicOffer } fro
 import { activeContractGroups } from '@/lib/sources';
 import { JOB_FAMILIES, familyBySlug } from '@/lib/taxonomy';
 import { paginate, parsePageParam } from '@/lib/pagination';
+import { clip, firstSentence } from '@/lib/text';
 import { PageCount, Pager } from '@/components/pager';
 import { OfferCard } from '@/components/offer-card';
 import { DemoBanner } from '@/components/demo-banner';
@@ -16,7 +17,7 @@ import { cityIndex } from '@/lib/geo';
 export const revalidate = 3600;
 
 /**
- * Les neuf familles sont connues à l'avance et ne changent pas : on les
+ * Les familles sont connues à l'avance et ne changent pas : on les
  * pré-génère. Les pages de ville, elles, dépendent des offres du jour et sont
  * rendues à la demande.
  */
@@ -58,7 +59,17 @@ export async function generateMetadata({
 
   return {
     title: page > 1 ? `${quoi} ${family.label} — page ${page}` : `${quoi} ${family.label}`,
-    description: `${family.intro} Les offres ${quoi.toLowerCase()} ${family.label.toLowerCase()} collectées automatiquement.`,
+    /*
+     * Un moteur affiche environ 160 caractères et coupe le reste au milieu
+     * d'une phrase. L'introduction entière en faisait jusqu'à 290 : on n'en
+     * garde que la première phrase, après le compte d'offres, qui est
+     * l'information qu'on cherche en premier.
+     */
+    description: clip(
+      `${offers.length} offre${offers.length === 1 ? '' : 's'} ${family.label} en ligne. ` +
+        firstSentence(family.intro),
+      160,
+    ),
     alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
     ...(clamped && requestedPage !== 1 ? { robots: { index: false, follow: true } } : {}),
   };

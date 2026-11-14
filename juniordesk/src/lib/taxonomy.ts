@@ -107,8 +107,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     label: 'Banque d’investissement',
     intro:
       'Banque de financement et d’investissement : émissions d’actions et de dette, ' +
-      'financements structurés, couverture sectorielle. ROME ne distingue pas cette ' +
-      'activité : le rattachement se fait sur l’intitulé.',
+      'financements structurés, couverture sectorielle des grandes entreprises.',
     romeCodes: [],
     keywords: [
       'banque d investissement', 'banque de financement', 'bfi', 'investment banking',
@@ -135,9 +134,9 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     slug: 'private-equity',
     label: 'Private equity et capital-investissement',
     intro:
-      'Fonds d’investissement, capital-risque, LBO, infrastructure. Comme pour la ' +
-      'banque d’investissement, ROME n’a pas de code propre : le rattachement passe ' +
-      'par l’intitulé.',
+      'Fonds d’investissement, capital-risque, LBO, infrastructure : la prise de ' +
+      'participation dans des entreprises non cotées, de l’analyse des dossiers au ' +
+      'suivi des participations.',
     romeCodes: ['M1226'],
     keywords: [
       'private equity', 'capital investissement', 'capital risque', 'capital developpement',
@@ -246,8 +245,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     label: 'Transaction services et évaluation',
     intro:
       'Due diligence financière, évaluation d’entreprise, restructuring. Une ' +
-      'activité de cabinet, souvent voisine de l’audit et du M&A, que ROME ne ' +
-      'distingue pas non plus.',
+      'activité de cabinet, souvent voisine de l’audit et du M&A.',
     romeCodes: [],
     keywords: [
       'transaction services', 'transaction advisory', 'due diligence',
@@ -315,8 +313,7 @@ export const JOB_FAMILIES: readonly JobFamily[] = [
     label: 'Fintech et paiements',
     intro:
       'Néobanques, paiement, monétique, assurtech, actifs numériques. Un secteur ' +
-      'jeune, sans code métier dédié, où les intitulés mélangent finance et ' +
-      'technologie.',
+      'jeune, où les intitulés mélangent finance et technologie.',
     romeCodes: [],
     keywords: [
       'fintech', 'insurtech', 'regtech', 'neobanque', 'paiement', 'payment', 'monetique',
