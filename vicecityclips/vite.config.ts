@@ -12,6 +12,9 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: false,
+    // Permet d'ouvrir l'application depuis l'iPhone par l'adresse IP du Mac,
+    // ou par son nom de partage (« nom-du-mac.local »).
+    allowedHosts: ['.local'],
     proxy: {
       '/api': { target: `http://127.0.0.1:${PORT_API}`, changeOrigin: false },
       '/pieces-jointes': { target: `http://127.0.0.1:${PORT_API}`, changeOrigin: false },
