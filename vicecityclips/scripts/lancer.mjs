@@ -85,17 +85,66 @@ async function attendreServeur(tentatives = 60) {
   return null;
 }
 
+/**
+ * Verifie que l'application repond bien par son adresse reseau.
+ *
+ * Un echec est concluant : quelque chose bloque, presque toujours le pare-feu.
+ * Une reussite ne prouve rien en revanche, car une connexion du Mac vers sa
+ * propre adresse ne passe pas forcement par le pare-feu : on ne dit donc rien
+ * dans ce cas plutot que de rassurer a tort.
+ */
+async function verifierAccesReseau(adresses) {
+  if (adresses.length === 0) return;
+
+  const url = `http://${adresses[0].adresse}:${PORT}/api/etat`;
+  try {
+    const reponse = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (reponse.ok) return;
+  } catch {
+    /* on traite l'echec juste en dessous */
+  }
+
+  console.log('  ⚠  Attention');
+  console.log('');
+  console.log("     Ce Mac n'arrive pas a joindre l'application par sa propre");
+  console.log('     adresse reseau. Votre iPhone n\'y arrivera pas non plus.');
+  console.log('');
+  console.log('     C\'est presque toujours le pare-feu de macOS :');
+  console.log('       Reglages Systeme → Reseau → Pare-feu → Options…');
+  console.log('       autorisez « node » a recevoir des connexions entrantes.');
+  console.log('');
+  console.log('     Double-cliquez sur verifier-reseau.command pour en avoir');
+  console.log('     le coeur net.');
+  console.log('');
+}
+
 function banniere(adresses) {
   const lignes = ['', '  ViceCityClips', '  ' + '─'.repeat(46), ''];
 
   if (adresses.length > 0) {
-    lignes.push("  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez :", '');
-    lignes.push(`      http://${adresses[0].adresse}:${PORT}`, '');
+    const url = `http://${adresses[0].adresse}:${PORT}`;
+    // L'adresse est encadree : l'erreur la plus frequente est d'oublier le
+    // « :PORT » a la fin, ce qui donne « le serveur ne repondait plus ».
+    const largeur = Math.max(url.length, 42) + 4;
+    const bord = '─'.repeat(largeur);
+
+    lignes.push(
+      "  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez",
+      "  cette adresse EN ENTIER :",
+      '',
+      `  ┌${bord}┐`,
+      `  │  ${url.padEnd(largeur - 2)}│`,
+      `  └${bord}┘`,
+      '',
+      `  Les « :${PORT} » de la fin font partie de l'adresse.`,
+      "  Sans eux, Safari repond « le serveur ne repondait plus ».",
+      '',
+    );
 
     if (adresses.length > 1) {
       lignes.push(
         "  Si cette adresse ne donne rien, votre Mac en a d'autres.",
-        '  Essayez dans l\'ordre :',
+        "  Essayez dans l'ordre, toujours en entier :",
         '',
         ...adresses.slice(1).map((a) => `      http://${a.adresse}:${PORT}      (${a.nom})`),
         '',
@@ -172,5 +221,9 @@ if (!verifierInstallation()) {
   process.on('SIGTERM', () => arreter(0));
 
   const etat = await attendreServeur();
-  if (etat) banniere(etat.adresses ?? []);
+  if (etat) {
+    const adresses = etat.adresses ?? [];
+    banniere(adresses);
+    await verifierAccesReseau(adresses);
+  }
 }

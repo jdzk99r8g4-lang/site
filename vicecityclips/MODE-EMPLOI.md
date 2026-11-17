@@ -116,6 +116,13 @@ Au démarrage, la fenêtre Terminal affiche une adresse de ce genre :
 Tapez cette adresse dans Safari sur l'iPhone. Les chiffres changent selon votre réseau :
 reprenez ceux affichés chez vous.
 
+> **L'erreur la plus fréquente : oublier le `:4317` à la fin.**
+>
+> `192.168.1.24` tout seul ne marchera pas : Safari répondra « Safari n'a pas pu ouvrir la
+> page car le serveur ne répondait plus ». Il faut l'adresse entière,
+> **`http://192.168.1.24:4317`**, deux-points et quatre chiffres compris. Après l'ajout à
+> l'écran d'accueil, vous n'aurez plus jamais à la retaper.
+
 **Faites-le une seule fois :** dans Safari, bouton **Partager** (le carré avec la flèche) →
 **Sur l'écran d'accueil**. Une icône ViceCityClips apparaît sur votre écran d'accueil, et
 l'application s'ouvre en plein écran, sans barre d'adresse — comme une vraie application.
@@ -133,6 +140,10 @@ toutes les adresses à essayer, et vous dit quoi faire. C'est beaucoup plus rapi
 chercher à l'aveugle.
 
 Les causes, par ordre de fréquence :
+
+**0. Le port oublié dans l'adresse.** Vérifiez d'abord ça : la barre d'adresse de Safari doit
+afficher `192.168.1.24:4317`, et non `192.168.1.24` tout court. Sans le `:4317`, vous obtenez
+exactement le message « le serveur ne répondait plus ».
 
 **1. Le pare-feu de macOS.** C'est la cause numéro un. Au premier démarrage, macOS affiche une
 fenêtre « Voulez-vous que l'application "node" accepte les connexions entrantes ? ». Si vous
