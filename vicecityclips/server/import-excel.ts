@@ -73,7 +73,7 @@ async function lireClasseur(chemin: string): Promise<ExcelJS.Workbook> {
     return classeur;
   } catch {
     const propre = new ExcelJS.Workbook();
-    await propre.xlsx.load(classeurSansCommentaires(chemin));
+    await propre.xlsx.load(classeurSansCommentaires(chemin) as unknown as ExcelJS.Buffer);
     return propre;
   }
 }
@@ -105,7 +105,7 @@ function texteBrut(valeur: ValeurCellule): string | null {
   if (typeof valeur === 'boolean') return valeur ? 'Oui' : 'Non';
   if (valeur instanceof Date) return valeur.toISOString();
   if (typeof valeur === 'object') {
-    const o = valeur as Record<string, unknown>;
+    const o = valeur as unknown as Record<string, unknown>;
     if ('richText' in o && Array.isArray(o.richText)) {
       const t = (o.richText as Array<{ text?: string }>).map((p) => p.text ?? '').join('');
       return t.trim() || null;
