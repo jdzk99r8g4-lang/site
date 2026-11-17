@@ -153,7 +153,7 @@ export default function Comptes() {
               )}
             </header>
 
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <dt className="text-xs text-slate-500 dark:text-slate-500">Abonnés</dt>
                 <dd className="nombres font-medium">{c.abonnes === null ? '—' : nombre(c.abonnes)}</dd>
@@ -178,7 +178,7 @@ export default function Comptes() {
             </dl>
 
             {(c.configurationPays || c.audiencePrincipale || c.dateCreation) && (
-              <dl className="mt-3 grid gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm sm:grid-cols-3 dark:border-slate-800">
+              <dl className="mt-3 grid gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
                 <div>
                   <dt className="text-xs text-slate-500 dark:text-slate-500">Configuration pays</dt>
                   <dd>{c.configurationPays ?? '—'}</dd>
@@ -344,7 +344,7 @@ function ModaleCompte({
       <div className="space-y-4">
         {erreur && <Message ton="erreur">{erreur}</Message>}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Identifiant (@…)"
             value={valeurs.identifiant}
@@ -482,17 +482,12 @@ function ModaleAbonnes({
       titre={compte ? `Abonnés de ${compte.identifiant}` : 'Abonnés'}
       ouverte={compte !== null}
       onFermer={onFermer}
-      pied={
-        <button type="button" className="bouton" onClick={onFermer}>
-          Fermer
-        </button>
-      }
     >
       <div className="space-y-4">
         {erreur && <Message ton="erreur">{erreur}</Message>}
 
         <Carte titre="Nouveau relevé">
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div className="grid gap-3">
             <ChampTexte
               libelle="Date"
               type="date"

@@ -1,6 +1,8 @@
 # ViceCityClips — mode d'emploi
 
-Votre tableau de pilotage de clipping, qui tourne **sur votre Mac**, dans votre navigateur.
+Votre tableau de pilotage de clipping. Le programme tourne **sur votre Mac**, mais
+l'application est faite pour être **utilisée depuis votre iPhone**.
+
 Aucun compte à créer, aucun abonnement, aucune clé. Vos données ne quittent jamais votre
 ordinateur.
 
@@ -58,7 +60,8 @@ Une fenêtre Terminal s'ouvre et vous guide :
 2. Il propose ensuite d'installer les composants de l'application. Tapez `o` puis Entrée.
    Cette étape prend une à deux minutes et ne s'exécute **qu'une seule fois**. Tout est
    téléchargé dans le sous-dossier `node_modules` et nulle part ailleurs sur votre Mac.
-3. L'application démarre et affiche les adresses à ouvrir.
+3. L'application se prépare (une seconde ou deux) puis démarre, et affiche **l'adresse à
+   ouvrir sur votre iPhone**.
 
 > **Si macOS refuse d'ouvrir le fichier** (« autorisation refusée », ou rien ne se passe) :
 > ouvrez le Terminal dans ce dossier et tapez une fois `chmod +x lancer.command`.
@@ -73,14 +76,18 @@ Une fenêtre Terminal s'ouvre et vous guide :
 
 ## 2. Tous les jours : lancer l'application
 
-**Double-cliquez sur `lancer.command`**, puis ouvrez <http://localhost:5173> dans Safari ou
-Chrome.
+**Double-cliquez sur `lancer.command`.** C'est tout.
 
 Vous pouvez aussi, depuis le Terminal ouvert dans le dossier :
 
 ```
 npm run dev
 ```
+
+L'application tourne sur **une seule adresse**, que la fenêtre Terminal affiche :
+
+- sur votre iPhone : `http://192.168.1.24:4317` (les chiffres changent chez vous) ;
+- sur ce Mac, si besoin : <http://localhost:4317>.
 
 La fenêtre Terminal doit **rester ouverte** tant que vous utilisez l'application : c'est elle
 qui fait tourner le programme. Vous pouvez la réduire, mais pas la fermer.
@@ -101,16 +108,22 @@ l'application lancée.
 Au démarrage, la fenêtre Terminal affiche une adresse de ce genre :
 
 ```
-  Depuis votre iPhone (meme Wi-Fi) :
-      http://192.168.1.24:5173
+  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez :
+
+      http://192.168.1.24:4317
 ```
 
 Tapez cette adresse dans Safari sur l'iPhone. Les chiffres changent selon votre réseau :
 reprenez ceux affichés chez vous.
 
-**Pour l'avoir comme une vraie application :** dans Safari, bouton **Partager** (le carré avec
-la flèche) → **Sur l'écran d'accueil**. Une icône ViceCityClips apparaît, et l'application
-s'ouvre en plein écran, sans barre d'adresse.
+**Faites-le une seule fois :** dans Safari, bouton **Partager** (le carré avec la flèche) →
+**Sur l'écran d'accueil**. Une icône ViceCityClips apparaît sur votre écran d'accueil, et
+l'application s'ouvre en plein écran, sans barre d'adresse — comme une vraie application.
+Vous n'aurez plus jamais à retaper l'adresse.
+
+> L'adresse peut changer si votre box redistribue les adresses du réseau. Si l'icône n'ouvre
+> plus rien, relancez `lancer.command` sur le Mac, regardez la nouvelle adresse affichée et
+> refaites l'ajout à l'écran d'accueil.
 
 ### Si l'iPhone n'arrive pas à se connecter
 
@@ -123,6 +136,17 @@ s'ouvre en plein écran, sans barre d'adresse.
   autres : l'adresse ne fonctionnera pas. Utilisez votre Wi-Fi personnel, ou le partage de
   connexion de votre iPhone (connectez le Mac au partage de l'iPhone, puis relancez
   l'application pour obtenir la nouvelle adresse).
+
+### Un point à savoir
+
+Pour que votre iPhone puisse s'y connecter, l'application est visible par **tous les appareils
+du même réseau Wi-Fi**, et elle ne demande pas de mot de passe. Chez vous, cela n'a pas
+d'importance. Mais évitez de la lancer sur un Wi-Fi partagé que vous ne maîtrisez pas
+(campus, coworking, hôtel) : n'importe qui sur ce réseau pourrait ouvrir l'adresse et voir vos
+données. Fermez la fenêtre Terminal quand vous ne vous en servez pas.
+
+L'application n'est jamais accessible depuis internet : elle ne sort pas de votre réseau
+local.
 
 ---
 
@@ -139,8 +163,12 @@ s'ouvre en plein écran, sans barre d'adresse.
 | **Checklist** | Vos 26 tâches de lancement, par phase |
 | **Réglages** | Frais, taux de change, objectif, exports et sauvegardes |
 
-Sur téléphone, les quatre premiers écrans sont dans la barre du bas ; les autres sont
-derrière le bouton **Plus**. Sur ordinateur, tout est dans la colonne de gauche.
+Les quatre premiers écrans sont dans la barre du bas ; les autres sont derrière le bouton
+**Plus**.
+
+L'application est conçue **uniquement pour le téléphone**. Ouverte sur le Mac, elle garde
+exactement la même présentation, en colonne étroite au centre de l'écran : c'est normal, et
+cela vous évite d'apprendre deux interfaces.
 
 Le bouton en haut à droite bascule entre **clair**, **sombre** et **automatique**.
 
@@ -256,9 +284,9 @@ Whop fait foi.
 
 ## 11. En cas de problème
 
-**« Le port 5173 est déjà utilisé »**
-L'application tourne déjà dans une autre fenêtre. Fermez-la, ou ouvrez simplement
-<http://localhost:5173>.
+**« Le port 4317 est déjà utilisé »**
+L'application tourne déjà dans une autre fenêtre Terminal. Fermez-la, ou ouvrez simplement
+l'adresse affichée par cette autre fenêtre.
 
 **L'installation échoue en parlant de `better-sqlite3` ou de compilation**
 Il manque les outils de développement d'Apple. Dans le Terminal :
@@ -290,21 +318,29 @@ Par honnêteté, voici la limite de ce qui a pu être testé avant de vous livre
 - les 58 tests automatiques des règles de calcul, dont vos cinq cas de référence ;
 - l'import de votre vrai fichier Excel : 3 campagnes, 2 comptes, 26 tâches, les 2 lignes
   EXEMPLE écartées, et des indicateurs identiques à ceux de votre onglet Tableau de bord ;
-- les huit écrans dans un vrai navigateur, en format ordinateur, en format iPhone et en mode
-  sombre, sans aucune erreur ;
+- les huit écrans dans un vrai navigateur au format iPhone, en clair et en sombre, sans
+  aucune erreur, et sans le moindre débordement sur les côtés ;
 - un parcours complet : publier, compte à rebours, soumettre, saisir les vues, voir 7,81 $,
   filtrer, enregistrer un paiement converti en euros, cocher la checklist, changer l'objectif ;
 - les seuils de couleur du minuteur, et le cycle complet sauvegarde → suppression →
-  restauration.
+  restauration ;
+- l'accès par l'adresse réseau (celle que tapera votre iPhone) : page, données, icône et
+  manifeste répondent tous correctement.
 
 **À confirmer chez vous, au premier lancement** (impossible à tester ailleurs que sur votre
-Mac) :
+Mac et votre iPhone) :
 
 - le double-clic sur `lancer.command` et la détection de Node.js par Homebrew ;
 - l'installation de `better-sqlite3` sur macOS ;
-- l'ouverture depuis l'iPhone sur votre Wi-Fi.
+- l'ouverture depuis l'iPhone sur votre Wi-Fi, et l'ajout à l'écran d'accueil.
 
-Si l'un de ces trois points coince, la section 11 donne la marche à suivre.
+Un détail d'affichage, aussi : les champs de date utilisent le sélecteur natif de l'appareil.
+Sur un iPhone réglé en français, il affiche JJ/MM/AAAA. Le navigateur de test utilisé ici n'a
+pas les données de langue française et affichait l'ordre américain : je n'ai donc pas pu le
+vérifier moi-même. Dans tous les cas la date enregistrée est la bonne, le format interne étant
+non ambigu.
+
+Si l'un de ces points coince, la section 11 donne la marche à suivre.
 
 ---
 

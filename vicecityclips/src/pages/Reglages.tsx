@@ -161,7 +161,7 @@ function FormulaireReglages({
 
   return (
     <Carte titre="Réglages de calcul">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4">
         <ChampTexte
           libelle="Frais Content Rewards (campagnes CPM)"
           inputMode="decimal"
@@ -306,7 +306,7 @@ function SauvegardeRestauration({
           type="file"
           accept=".zip,application/zip"
           onChange={(e) => setArchive(e.target.files?.[0] ?? null)}
-          className="champ sm:max-w-sm"
+          className="champ"
         />
         <button
           type="button"

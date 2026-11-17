@@ -22,11 +22,11 @@
   }
 
   h1 {
-    @apply text-xl font-semibold tracking-tight sm:text-2xl;
+    @apply text-xl font-semibold tracking-tight;
   }
 
   h2 {
-    @apply text-base font-semibold tracking-tight sm:text-lg;
+    @apply text-base font-semibold tracking-tight;
   }
 }
 

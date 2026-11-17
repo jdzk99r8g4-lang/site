@@ -349,7 +349,7 @@ function ModaleTache({
           placeholder="Ce qu'il y a à faire"
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Phase"
             value={valeurs.phase}

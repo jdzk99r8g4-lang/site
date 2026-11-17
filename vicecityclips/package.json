@@ -6,8 +6,9 @@
   "description": "Tableau de pilotage local pour l'activite de clipping ViceCityClips",
   "scripts": {
     "dev": "node scripts/lancer.mjs",
-    "dev:api": "tsx watch server/index.ts",
-    "dev:web": "vite",
+    "start": "node scripts/lancer.mjs",
+    "serveur": "tsx server/index.ts",
+    "interface": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

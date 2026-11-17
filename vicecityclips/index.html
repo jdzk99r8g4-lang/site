@@ -2,11 +2,27 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- viewport-fit=cover : l'application occupe tout l'ecran de l'iPhone,
+         encoche et barre de geste comprises. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
     <meta name="color-scheme" content="light dark" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="ViceCityClips" />
+    <meta name="description" content="Tableau de pilotage de l'activité de clipping ViceCityClips" />
+
     <title>ViceCityClips</title>
+
+    <!-- Ajout a l'ecran d'accueil de l'iPhone : icone, nom et plein ecran -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icone.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="ViceCityClips" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f5f9" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617" />
   </head>
   <body>
     <div id="root"></div>

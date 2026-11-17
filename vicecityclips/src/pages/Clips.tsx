@@ -130,7 +130,7 @@ export default function Clips() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3">
           <ChampListe
             libelle="Compte"
             value={filtres.compteId}
@@ -270,7 +270,7 @@ function CarteClip({
         </div>
       </header>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <Valeur libelle="Campagne" valeur={clip.campagneId ?? '—'} precision={clip.campagneNom ?? undefined} />
         <Valeur libelle="Soumis à" valeur={heure(clip.heureSoumission)} />
         <Valeur

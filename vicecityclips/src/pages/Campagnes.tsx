@@ -287,7 +287,7 @@ function CarteCampagne({
       </header>
 
       {c.type === 'CPM' ? (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <Donnee libelle="CPM" valeur={`${dollars(c.cpm)} / 1 000 vues`} />
           <Donnee libelle="Paiement minimum" valeur={dollars(c.paiementMin)} />
           <Donnee
@@ -307,7 +307,7 @@ function CarteCampagne({
         </p>
       )}
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm sm:grid-cols-4 dark:border-slate-800">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
         <Donnee libelle="Clips" valeur={nombre(c.nbClips)} />
         <Donnee libelle="Vues comptées" valeur={nombre(c.vuesComptees)} />
         <Donnee libelle="Gain net estimé" valeur={dollars(c.gainNetEstime)} />
@@ -315,7 +315,7 @@ function CarteCampagne({
       </dl>
 
       {detailsOuverts && (
-        <dl className="mt-3 grid gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm sm:grid-cols-2 dark:border-slate-800">
+        <dl className="mt-3 grid gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
           <Donnee libelle="Budget total" valeur={c.budgetTotal === null ? '—' : dollars(c.budgetTotal)} />
           <Donnee libelle="Plateformes éligibles" valeur={c.plateformesEligibles ?? '—'} />
           <Donnee libelle="Audience exigée" valeur={c.audienceExigee ?? '—'} />
@@ -327,7 +327,7 @@ function CarteCampagne({
           />
           <Donnee libelle="Date limite" valeur={c.dateLimite ? date(c.dateLimite) : 'Non indiquée'} />
           {c.lien && (
-            <div className="sm:col-span-2">
+            <div>
               <dt className="text-xs text-slate-500 dark:text-slate-500">Lien de la campagne</dt>
               <dd>
                 <a href={c.lien} target="_blank" rel="noreferrer" className="lien break-all">
@@ -337,7 +337,7 @@ function CarteCampagne({
             </div>
           )}
           {c.reglesCles && (
-            <div className="sm:col-span-2">
+            <div>
               <dt className="text-xs text-slate-500 dark:text-slate-500">Règles clés</dt>
               <dd className="whitespace-pre-line text-slate-700 dark:text-slate-300">{c.reglesCles}</dd>
             </div>
@@ -458,7 +458,7 @@ function ModaleCampagne({
       <div className="space-y-4">
         {erreur && <Message ton="erreur">{erreur}</Message>}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Identifiant court (unique)"
             value={valeurs.id}
@@ -493,7 +493,7 @@ function ModaleCampagne({
           onChange={(e) => modifier('lien', e.target.value)}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampListe
             libelle="Type"
             value={valeurs.type}
@@ -510,7 +510,7 @@ function ModaleCampagne({
         </div>
 
         {valeurs.type === 'CPM' && (
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3">
             <ChampTexte
               libelle="CPM ($ / 1 000 vues)"
               inputMode="decimal"
@@ -536,7 +536,7 @@ function ModaleCampagne({
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Budget total ($)"
             inputMode="decimal"

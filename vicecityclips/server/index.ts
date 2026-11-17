@@ -7,6 +7,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import multer from 'multer';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
@@ -766,13 +767,45 @@ app.post(
   }),
 );
 
-/* --- Interface compilee (si « npm run build » a ete lance) --- */
+/* --- Interface --- */
 
+// L'interface compilee est servie par ce meme serveur : une seule adresse a
+// ouvrir, sur l'ordinateur comme sur l'iPhone.
 const DOSSIER_DIST = path.join(RACINE, 'dist');
-if (fs.existsSync(DOSSIER_DIST)) {
-  app.use(express.static(DOSSIER_DIST));
-  app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(DOSSIER_DIST, 'index.html')));
-}
+
+app.use(
+  express.static(DOSSIER_DIST, {
+    // index.html n'est jamais mis en cache : une nouvelle version est prise en
+    // compte des le rechargement de la page sur le telephone.
+    setHeaders: (reponse, chemin) => {
+      if (chemin.endsWith('index.html')) reponse.setHeader('Cache-Control', 'no-cache');
+    },
+  }),
+);
+
+app.get(/^(?!\/api\/).*/, (_req, res) => {
+  const page = path.join(DOSSIER_DIST, 'index.html');
+  if (fs.existsSync(page)) {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(page);
+    return;
+  }
+  res
+    .status(503)
+    .type('html')
+    .send(
+      `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+       <title>ViceCityClips</title></head>
+       <body style="font-family:-apple-system,system-ui,sans-serif;margin:0;padding:24px;background:#0f172a;color:#e2e8f0">
+       <h1 style="font-size:20px">ViceCityClips n'est pas encore compilee</h1>
+       <p>L'interface doit etre construite une fois avant d'etre servie.</p>
+       <p>Dans le Terminal, dans le dossier de l'application :</p>
+       <pre style="background:#1e293b;padding:12px;border-radius:12px;overflow:auto">npm run build</pre>
+       <p>Ou relancez simplement <strong>lancer.command</strong>, qui s'en charge.</p>
+       </body></html>`,
+    );
+});
 
 /* --- Erreurs --- */
 
@@ -814,11 +847,56 @@ async function importPremierLancement(): Promise<void> {
   }
 }
 
+/**
+ * Adresse de la machine sur le reseau local : c'est celle a taper sur l'iPhone.
+ * On prefere le Wi-Fi (en0 sur Mac).
+ */
+export function adresseReseauLocal(): string | null {
+  const ordre = ['en0', 'en1', 'eth0', 'wlan0'];
+  const candidates: Array<{ nom: string; adresse: string }> = [];
+
+  for (const [nom, liste] of Object.entries(os.networkInterfaces())) {
+    for (const details of liste ?? []) {
+      if (details.family !== 'IPv4' || details.internal) continue;
+      candidates.push({ nom, adresse: details.address });
+    }
+  }
+
+  candidates.sort((a, b) => {
+    const rangA = ordre.indexOf(a.nom);
+    const rangB = ordre.indexOf(b.nom);
+    return (rangA === -1 ? 99 : rangA) - (rangB === -1 ? 99 : rangB);
+  });
+
+  return candidates.length > 0 ? candidates[0].adresse : null;
+}
+
 // Le serveur demarre des que ce fichier est lance. VCC_PAS_DE_SERVEUR=1 permet
 // de l'importer sans l'ouvrir (utile pour des tests).
 if (process.env.VCC_PAS_DE_SERVEUR !== '1') {
   await importPremierLancement();
-  app.listen(PORT_API, '127.0.0.1', () => {
-    console.log(`[ViceCityClips] Serveur de donnees pret sur http://127.0.0.1:${PORT_API}`);
+
+  // On ecoute sur toutes les interfaces : sans cela, l'iPhone ne peut pas
+  // joindre l'application. Elle reste accessible aux seuls appareils du meme
+  // reseau local, et n'est jamais exposee a internet.
+  const serveur = app.listen(PORT_API, '0.0.0.0', () => {
+    const ip = adresseReseauLocal();
+    console.log(`[ViceCityClips] Pret sur http://localhost:${PORT_API}`);
+    if (ip) console.log(`[ViceCityClips] Depuis l'iPhone : http://${ip}:${PORT_API}`);
+  });
+
+  serveur.on('error', (erreur: NodeJS.ErrnoException) => {
+    if (erreur.code === 'EADDRINUSE') {
+      console.error('');
+      console.error(`  Le port ${PORT_API} est deja utilise.`);
+      console.error("  ViceCityClips tourne sans doute deja dans une autre fenetre :");
+      console.error(`  ouvrez simplement http://localhost:${PORT_API}`);
+      console.error('');
+      console.error('  Sinon, fermez l\'autre fenetre puis relancez lancer.command.');
+      console.error('');
+    } else {
+      console.error('[ViceCityClips] Le serveur n\'a pas pu demarrer :', erreur.message);
+    }
+    process.exit(1);
   });
 }

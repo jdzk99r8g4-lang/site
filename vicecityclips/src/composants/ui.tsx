@@ -319,12 +319,12 @@ export function Modale({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm"
       onClick={onFermer}
       role="presentation"
     >
       <div
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-slate-200 bg-white shadow-xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="max-h-[92vh] w-full max-w-[480px] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -443,7 +443,7 @@ export function BoutonTheme() {
       title={`${libelle[theme]} — cliquez pour changer`}
     >
       <span aria-hidden="true">{icone[theme]}</span>
-      <span className="hidden sm:inline">{court[theme]}</span>
+      <span>{court[theme]}</span>
       <span className="sr-only">{libelle[theme]}</span>
     </button>
   );

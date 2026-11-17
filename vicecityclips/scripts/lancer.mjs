@@ -1,7 +1,8 @@
-// Lance les deux morceaux de l'application et affiche les adresses a ouvrir.
+// Lance ViceCityClips : un seul processus, un seul port, une seule adresse.
 //
-//   - le serveur de donnees (Node + SQLite) sur le port 4317
-//   - l'interface (Vite) sur le port 5173, visible sur le reseau local
+//   1. compile l'interface dans le dossier « dist »
+//   2. demarre le serveur, qui sert a la fois l'interface et les donnees
+//   3. affiche l'adresse a ouvrir sur l'iPhone
 //
 // Utilise par « npm run dev » et par « lancer.command ».
 
@@ -12,19 +13,16 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT_API = 4317;
-const PORT_WEB = 5173;
+const PORT = Number(process.env.PORT_API ?? 4317);
 
 /* ------------------------------------------------------------------ */
 
+/** Adresse de ce Mac sur le reseau local : celle a taper sur l'iPhone. */
 function adresseReseauLocal() {
-  const interfaces = os.networkInterfaces();
-  // On prefere une interface Wi-Fi (en0 sur Mac), puis n'importe quelle
-  // adresse IPv4 qui n'est pas celle de la machine elle-meme.
   const ordre = ['en0', 'en1', 'eth0', 'wlan0'];
   const candidates = [];
 
-  for (const [nom, liste] of Object.entries(interfaces)) {
+  for (const [nom, liste] of Object.entries(os.networkInterfaces())) {
     for (const details of liste ?? []) {
       if (details.family !== 'IPv4' || details.internal) continue;
       candidates.push({ nom, adresse: details.address });
@@ -50,103 +48,132 @@ function verifierInstallation() {
   if (manquants.length === 0) return true;
 
   console.error('');
-  console.error("  Les dependances de l'application ne sont pas installees.");
+  console.error("  Les composants de l'application ne sont pas installes.");
   console.error('');
   console.error('  Ouvrez le Terminal dans ce dossier et lancez :');
   console.error('');
   console.error('      npm install');
   console.error('');
-  console.error('  Puis relancez l\'application.');
+  console.error("  Puis relancez l'application.");
   console.error('');
   return false;
 }
 
-function banniere(ip) {
-  const fichierExcel = fs
-    .readdirSync(RACINE)
-    .find((nom) => nom.toLowerCase().endsWith('.xlsx') && !nom.startsWith('~$'));
-  const baseExiste = fs.existsSync(path.join(RACINE, 'vicecityclips.db'));
+/** Compile l'interface. Resout a true si la compilation a reussi. */
+function compilerInterface() {
+  return new Promise((resoudre) => {
+    process.stdout.write("  Preparation de l'interface… ");
+    const debut = Date.now();
+    const enfant = spawn(binaire('vite'), ['build', '--logLevel', 'error'], {
+      cwd: RACINE,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
 
+    let erreurs = '';
+    enfant.stderr.on('data', (donnees) => {
+      erreurs += donnees.toString();
+    });
+
+    enfant.on('error', () => resoudre(false));
+    enfant.on('exit', (code) => {
+      if (code === 0) {
+        console.log(`fait (${((Date.now() - debut) / 1000).toFixed(1)} s)`);
+        resoudre(true);
+      } else {
+        console.log('echec');
+        console.error('');
+        console.error(erreurs.trim());
+        console.error('');
+        resoudre(false);
+      }
+    });
+  });
+}
+
+/** Attend que le serveur reponde, pour n'afficher l'adresse qu'une fois prete. */
+async function attendreServeur(tentatives = 60) {
+  for (let i = 0; i < tentatives; i++) {
+    try {
+      const reponse = await fetch(`http://127.0.0.1:${PORT}/api/etat`);
+      if (reponse.ok) return true;
+    } catch {
+      /* pas encore pret */
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+
+function banniere(ip) {
   const lignes = [
     '',
-    '  ViceCityClips — tableau de pilotage',
-    '  ' + '─'.repeat(52),
-    '',
-    '  Sur cet ordinateur :',
-    `      http://localhost:${PORT_WEB}`,
+    '  ViceCityClips',
+    '  ' + '─'.repeat(46),
     '',
   ];
 
   if (ip) {
     lignes.push(
-      '  Depuis votre iPhone (meme Wi-Fi) :',
-      `      http://${ip}:${PORT_WEB}`,
+      "  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez :",
       '',
-      '  Astuce : sur iPhone, bouton Partager puis « Sur l\'ecran d\'accueil »',
-      "  pour l'ouvrir comme une application.",
+      `      http://${ip}:${PORT}`,
+      '',
+      "  Puis bouton Partager  →  « Sur l'ecran d'accueil »",
+      "  pour l'avoir comme une vraie application.",
+      '',
+      `  Sur ce Mac : http://localhost:${PORT}`,
       '',
     );
   } else {
     lignes.push(
-      '  Adresse reseau local introuvable : verifiez que le Wi-Fi est actif',
-      "  si vous voulez ouvrir l'application depuis l'iPhone.",
+      `  Sur ce Mac : http://localhost:${PORT}`,
+      '',
+      '  Adresse reseau introuvable : activez le Wi-Fi puis relancez',
+      "  pour pouvoir ouvrir l'application depuis l'iPhone.",
       '',
     );
   }
 
-  if (!baseExiste) {
-    lignes.push(
-      fichierExcel
-        ? `  Premier lancement : le contenu de « ${fichierExcel} » va etre importe.`
-        : '  Premier lancement : aucun fichier .xlsx dans ce dossier, la base',
-      fichierExcel ? '' : '  demarrera vide (vous pourrez tout saisir dans l\'application).',
-      '',
-    );
-  }
+  lignes.push(
+    '  Vos donnees restent dans ce dossier :',
+    `      ${RACINE}`,
+    '',
+    "  Pour arreter : Ctrl + C, ou fermez cette fenetre.",
+    '',
+  );
 
-  lignes.push('  Vos donnees restent dans ce dossier :', `      ${RACINE}`, '');
-  lignes.push("  Pour arreter l'application : Ctrl + C, ou fermez cette fenetre.", '');
-
-  console.log(lignes.filter((l) => l !== undefined).join('\n'));
+  console.log(lignes.join('\n'));
 }
 
 /* ------------------------------------------------------------------ */
 
 if (!verifierInstallation()) {
   process.exitCode = 1;
+} else if (!(await compilerInterface())) {
+  console.error("  L'interface n'a pas pu etre preparee : l'application ne demarre pas.");
+  process.exitCode = 1;
 } else {
-  const ip = adresseReseauLocal();
-  const processus = [];
-
-  const lancer = (nom, commande, args, env = {}) => {
-    const enfant = spawn(commande, args, {
-      cwd: RACINE,
-      stdio: 'inherit',
-      env: { ...process.env, ...env },
-    });
-    enfant.on('error', (erreur) => {
-      console.error(`  Impossible de lancer ${nom} : ${erreur.message}`);
-      arreter(1);
-    });
-    enfant.on('exit', (code) => {
-      if (code !== 0 && code !== null) {
-        console.error(`  ${nom} s'est arrete (code ${code}).`);
-        arreter(code);
-      }
-    });
-    processus.push(enfant);
-    return enfant;
-  };
+  const serveur = spawn(binaire('tsx'), ['server/index.ts'], {
+    cwd: RACINE,
+    stdio: ['inherit', 'inherit', 'inherit'],
+    env: { ...process.env, PORT_API: String(PORT) },
+  });
 
   let arretEnCours = false;
   const arreter = (code = 0) => {
     if (arretEnCours) return;
     arretEnCours = true;
-    for (const enfant of processus) {
-      if (!enfant.killed) enfant.kill('SIGTERM');
-    }
+    if (!serveur.killed) serveur.kill('SIGTERM');
     process.exitCode = code;
   };
+
+  serveur.on('error', (erreur) => {
+    console.error(`  Impossible de demarrer le serveur : ${erreur.message}`);
+    arreter(1);
+  });
+  serveur.on('exit', (code) => {
+    if (code !== 0 && code !== null && !arretEnCours) arreter(code);
+  });
 
   process.on('SIGINT', () => {
     console.log('\n  Arret de ViceCityClips…\n');
@@ -154,12 +181,7 @@ if (!verifierInstallation()) {
   });
   process.on('SIGTERM', () => arreter(0));
 
-  lancer('le serveur de donnees', binaire('tsx'), ['watch', '--clear-screen=false', 'server/index.ts'], {
-    PORT_API: String(PORT_API),
-  });
-
-  lancer('l\'interface', binaire('vite'), ['--host', '--port', String(PORT_WEB)]);
-
-  // La banniere s'affiche apres le demarrage de Vite, pour rester visible.
-  setTimeout(() => banniere(ip), 1800);
+  if (await attendreServeur()) {
+    banniere(adresseReseauLocal());
+  }
 }

@@ -14,7 +14,7 @@ interface Page {
   titre: string;
   court: string;
   icone: string;
-  /** Visible directement dans la barre d'onglets du telephone. */
+  /** Visible directement dans la barre d'onglets du bas. */
   principale: boolean;
   composant: ComponentType;
 }
@@ -22,11 +22,11 @@ interface Page {
 const PAGES: Page[] = [
   { cle: 'tableau-de-bord', titre: 'Tableau de bord', court: 'Bord', icone: '📊', principale: true, composant: TableauDeBord },
   { cle: 'clips', titre: 'Clips', court: 'Clips', icone: '🎬', principale: true, composant: Clips },
-  { cle: 'minuteur', titre: 'Minuteur de soumission', court: 'Minuteur', icone: '⏱', principale: true, composant: Minuteur },
+  { cle: 'minuteur', titre: 'Minuteur', court: 'Minuteur', icone: '⏱', principale: true, composant: Minuteur },
   { cle: 'campagnes', titre: 'Campagnes', court: 'Campagnes', icone: '🎯', principale: true, composant: Campagnes },
   { cle: 'comptes', titre: 'Comptes', court: 'Comptes', icone: '👤', principale: false, composant: Comptes },
   { cle: 'paiements', titre: 'Paiements', court: 'Paiements', icone: '💵', principale: false, composant: Paiements },
-  { cle: 'checklist', titre: 'Checklist de lancement', court: 'Checklist', icone: '✅', principale: false, composant: Checklist },
+  { cle: 'checklist', titre: 'Checklist', court: 'Checklist', icone: '✅', principale: false, composant: Checklist },
   { cle: 'reglages', titre: 'Réglages', court: 'Réglages', icone: '⚙️', principale: false, composant: Reglages },
 ];
 
@@ -60,63 +60,36 @@ export default function App() {
   const menuActif = secondaires.some((p) => p.cle === cleCourante);
 
   return (
-    <div className="min-h-screen lg:flex">
-      {/* Barre laterale sur ordinateur */}
-      <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white p-4 lg:block dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-6 px-2">
-          <p className="text-lg font-semibold tracking-tight">ViceCityClips</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Tableau de pilotage</p>
-        </div>
-        <nav className="space-y-1">
-          {PAGES.map((p) => (
-            <button
-              key={p.cle}
-              type="button"
-              onClick={() => aller(p.cle)}
-              aria-current={p.cle === cleCourante ? 'page' : undefined}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                p.cle === cleCourante
-                  ? 'bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-200'
-                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-            >
-              <span aria-hidden="true" className="text-base">
-                {p.icone}
-              </span>
-              {p.titre}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* En-tete */}
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 lg:hidden dark:text-slate-400">
-                ViceCityClips
-              </p>
-              <h1 className="truncate">{page.titre}</h1>
-            </div>
-            <BoutonTheme />
+    // Colonne au format telephone, centree. Sur un grand ecran, l'application
+    // garde exactement la meme mise en page que sur l'iPhone.
+    <div className="mx-auto min-h-screen w-full max-w-[480px] bg-slate-100 shadow-[0_0_60px_rgba(15,23,42,0.08)] dark:bg-slate-950">
+      {/* En-tete */}
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-slate-200 bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+              ViceCityClips
+            </p>
+            <h1 className="truncate">{page.titre}</h1>
           </div>
-        </header>
+          <BoutonTheme />
+        </div>
+      </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-4 lg:pb-10">
-          <Contenu />
-        </main>
-      </div>
+      {/* Le contenu passe sous l'en-tete fixe et au-dessus de la barre d'onglets. */}
+      <main className="px-4 pb-32 pt-[calc(env(safe-area-inset-top)+4.75rem)]">
+        <Contenu />
+      </main>
 
-      {/* Menu « Plus » du telephone */}
+      {/* Menu « Plus » */}
       {menuOuvert && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm"
           onClick={() => setMenuOuvert(false)}
           role="presentation"
         >
           <div
-            className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-slate-200 bg-white p-4 pb-8 dark:border-slate-800 dark:bg-slate-900"
+            className="absolute inset-x-0 bottom-0 mx-auto max-w-[480px] rounded-t-3xl border-t border-slate-200 bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] dark:border-slate-800 dark:bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="mb-3 px-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -128,7 +101,7 @@ export default function App() {
                   key={p.cle}
                   type="button"
                   onClick={() => aller(p.cle)}
-                  className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-medium ${
+                  className={`flex min-h-[52px] items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-medium ${
                     p.cle === cleCourante
                       ? 'border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200'
                       : 'border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200'
@@ -143,9 +116,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Barre d'onglets du telephone */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
-        <div className="flex items-stretch pb-[env(safe-area-inset-bottom)]">
+      {/* Barre d'onglets */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="mx-auto flex w-full max-w-[480px] items-stretch pb-[env(safe-area-inset-bottom)]">
           {PAGES.filter((p) => p.principale).map((p) => (
             <button
               key={p.cle}

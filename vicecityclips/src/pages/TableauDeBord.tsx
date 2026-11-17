@@ -65,7 +65,7 @@ export default function TableauDeBord() {
       {/* Production */}
       <div>
         <h2 className="mb-2 px-1">Production</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           <Indicateur libelle="Clips publiés" valeur={nombre(t.clipsPublies)} />
           <Indicateur
             libelle="Approuvés ou payés"
@@ -116,7 +116,7 @@ export default function TableauDeBord() {
       {/* Argent */}
       <div>
         <h2 className="mb-2 px-1">Argent</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           <Indicateur
             libelle="Gain net estimé (approuvés ou payés)"
             valeur={dollars(t.gainNetEstimeApprouveUsd)}
@@ -247,34 +247,38 @@ function GraphiqueMensuel({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 -mx-4 overflow-x-auto px-4">
-        <table className="tableau">
-          <thead>
-            <tr>
-              <th>Mois</th>
-              <th className="text-right">Clips</th>
-              <th className="text-right">Vues</th>
-              <th className="text-right">Gains nets ($)</th>
-              <th className="text-right">Reçu (€)</th>
-              <th className="text-right">% objectif</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lignes.map((l) => (
-              <tr key={l.mois}>
-                <td className="whitespace-nowrap font-medium">{mois(l.mois)}</td>
-                <td className="nombres text-right">{nombre(l.clipsPublies)}</td>
-                <td className="nombres text-right">{nombre(l.vuesComptees)}</td>
-                <td className="nombres text-right">{dollars(l.gainNetEstimeApprouveUsd)}</td>
-                <td className="nombres text-right">{euros(l.recuNetEur)}</td>
-                <td className="nombres text-right">
-                  {l.partObjectif === null ? '—' : pourcent(l.partObjectif, 1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Le detail mois par mois, en liste : six colonnes ne tiennent pas sur
+          un ecran de telephone. */}
+      <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
+        {lignes.map((l) => (
+          <li key={l.mois} className="py-3 first:pt-0 last:pb-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="font-medium capitalize">{mois(l.mois)}</p>
+              <p className="nombres text-sm text-slate-500 dark:text-slate-400">
+                {l.partObjectif === null ? '—' : pourcent(l.partObjectif, 1)} de l'objectif
+              </p>
+            </div>
+            <dl className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500 dark:text-slate-500">Clips</dt>
+                <dd className="nombres font-medium">{nombre(l.clipsPublies)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500 dark:text-slate-500">Vues</dt>
+                <dd className="nombres font-medium">{nombre(l.vuesComptees)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500 dark:text-slate-500">Gains nets</dt>
+                <dd className="nombres font-medium">{dollars(l.gainNetEstimeApprouveUsd)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500 dark:text-slate-500">Reçu</dt>
+                <dd className="nombres font-medium">{euros(l.recuNetEur)}</dd>
+              </div>
+            </dl>
+          </li>
+        ))}
+      </ul>
       {objectifEur > 0 && (
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-500">
           Le pourcentage compare les euros réellement reçus dans le mois à l'objectif de{' '}

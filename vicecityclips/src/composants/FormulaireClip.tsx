@@ -179,7 +179,7 @@ export function ModaleClip({
       <div className="space-y-4">
         {erreur && <Message ton="erreur">{erreur}</Message>}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Date de publication"
             type="date"
@@ -214,7 +214,7 @@ export function ModaleClip({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <ChampListe
             libelle="Compte"
             value={valeurs.compteId}
@@ -260,7 +260,7 @@ export function ModaleClip({
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Créateur / streamer"
             value={valeurs.createur}
@@ -292,7 +292,7 @@ export function ModaleClip({
           placeholder="Lien du live ou du clip d'origine"
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Vues à J+3"
             inputMode="numeric"

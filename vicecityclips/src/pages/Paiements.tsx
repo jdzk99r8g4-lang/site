@@ -127,7 +127,7 @@ export default function Paiements() {
         </Message>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         <Indicateur libelle="Total reçu net" valeur={dollars(totalUsd)} />
         <Indicateur libelle="Total reçu net (€)" valeur={euros(totalEur)} />
         <Indicateur libelle="Nombre de paiements" valeur={String(paiements.length)} />
@@ -182,7 +182,7 @@ export default function Paiements() {
               </div>
             </header>
 
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-5">
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <dt className="text-xs text-slate-500 dark:text-slate-500">Brut</dt>
                 <dd className="nombres font-medium">{dollars(p.montantBrutUsd)}</dd>
@@ -406,7 +406,7 @@ function ModalePaiement({
       <div className="space-y-4">
         {erreur && <Message ton="erreur">{erreur}</Message>}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Date de réception"
             type="date"
@@ -434,7 +434,7 @@ function ModalePaiement({
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <ChampTexte
             libelle="Montant brut ($)"
             inputMode="decimal"
