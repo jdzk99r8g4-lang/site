@@ -1,0 +1,20 @@
+# Dependances
+node_modules/
+
+# Interface compilee
+dist/
+
+# Vos donnees : elles restent sur votre ordinateur et ne partent jamais sur GitHub.
+vicecityclips.db
+vicecityclips.db-journal
+vicecityclips.db-wal
+vicecityclips.db-shm
+pieces-jointes/
+exports/
+sauvegardes/
+
+# Le fichier Excel de depart (il contient vos donnees)
+*.xlsx
+*.xls
+
+.DS_Store
