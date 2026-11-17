@@ -127,11 +127,33 @@ Vous n'aurez plus jamais à retaper l'adresse.
 
 ### Si l'iPhone n'arrive pas à se connecter
 
-- Vérifiez que les deux appareils sont sur le **même** Wi-Fi (pas l'iPhone en 4G/5G).
-  Coupez les données mobiles pour en être sûr.
-- Vérifiez que la fenêtre Terminal est toujours ouverte sur le Mac.
-- Si votre Mac a un pare-feu actif : *Réglages Système → Réseau → Pare-feu*. Il peut demander
-  d'autoriser les connexions entrantes pour Node — acceptez.
+**Commencez par là : double-cliquez sur `verifier-reseau.command`** (dans le même dossier que
+`lancer.command`), pendant que l'application tourne. Il teste tout seul ce qui bloque, affiche
+toutes les adresses à essayer, et vous dit quoi faire. C'est beaucoup plus rapide que de
+chercher à l'aveugle.
+
+Les causes, par ordre de fréquence :
+
+**1. Le pare-feu de macOS.** C'est la cause numéro un. Au premier démarrage, macOS affiche une
+fenêtre « Voulez-vous que l'application "node" accepte les connexions entrantes ? ». Si vous
+avez cliqué **Refuser**, ou si la fenêtre est passée inaperçue, l'iPhone ne verra jamais
+l'application.
+
+Pour corriger : *Réglages Système → Réseau → Pare-feu → Options…*, cherchez **node** dans la
+liste et mettez-le sur « Autoriser les connexions entrantes ». S'il n'y figure pas, ajoutez-le
+avec le bouton **+**. Pour vérifier rapidement que c'est bien lui le coupable, vous pouvez
+désactiver le pare-feu une minute, tester, puis le réactiver.
+
+**2. La mauvaise adresse.** Si votre Mac a un VPN, un câble Ethernet ou un partage de
+connexion, il a plusieurs adresses et l'application ne peut pas deviner laquelle mène à votre
+iPhone. Elle les affiche désormais toutes : essayez-les l'une après l'autre, en commençant par
+celle marquée Wi-Fi.
+
+**3. Les deux appareils ne sont pas sur le même réseau.** Vérifiez que l'iPhone est bien en
+Wi-Fi et pas en 4G/5G — coupez les données mobiles pour en être sûr. Attention aussi aux box
+qui diffusent deux réseaux distincts (2,4 GHz et 5 GHz) : ce sont parfois deux réseaux séparés.
+
+**4. La fenêtre Terminal a été fermée** sur le Mac. L'application ne tourne plus.
 - Sur certains réseaux publics ou Wi-Fi « invité », les appareils sont isolés les uns des
   autres : l'adresse ne fonctionnera pas. Utilisez votre Wi-Fi personnel, ou le partage de
   connexion de votre iPhone (connectez le Mac au partage de l'iPhone, puis relancez
@@ -297,6 +319,10 @@ Acceptez la fenêtre qui s'ouvre, attendez la fin, puis relancez `lancer.command
 
 **La page affiche « Impossible de joindre le serveur de l'application »**
 La fenêtre Terminal a été fermée. Relancez `lancer.command`.
+
+**L'iPhone n'affiche rien alors que le Mac fonctionne**
+Double-cliquez sur `verifier-reseau.command` pendant que l'application tourne : il identifie
+la cause et affiche les adresses à essayer. Voir aussi la section 3.
 
 **J'ai tout cassé en bidouillant**
 Restaurez votre dernière sauvegarde (section 7). Si vous n'en avez pas et que vous voulez

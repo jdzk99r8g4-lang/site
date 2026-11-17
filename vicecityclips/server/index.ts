@@ -33,6 +33,7 @@ import {
   STATUTS_TACHE,
   TYPES_CAMPAGNE,
 } from '../shared/types';
+import { choisirAdresses, type AdresseReseau } from '../shared/reseau';
 
 export const PORT_API = Number(process.env.PORT_API ?? 4317);
 
@@ -317,6 +318,8 @@ app.get(
       baseVide: baseEstVide(db),
       fichierExcel: fichierExcel ? path.basename(fichierExcel) : null,
       dossier: RACINE,
+      port: PORT_API,
+      adresses: adressesReseauLocal(),
     });
   }),
 );
@@ -851,24 +854,14 @@ async function importPremierLancement(): Promise<void> {
  * Adresse de la machine sur le reseau local : c'est celle a taper sur l'iPhone.
  * On prefere le Wi-Fi (en0 sur Mac).
  */
+/** Adresses de ce Mac a proposer pour l'iPhone, la plus probable en tete. */
+export function adressesReseauLocal(): AdresseReseau[] {
+  return choisirAdresses(os.networkInterfaces() as never);
+}
+
 export function adresseReseauLocal(): string | null {
-  const ordre = ['en0', 'en1', 'eth0', 'wlan0'];
-  const candidates: Array<{ nom: string; adresse: string }> = [];
-
-  for (const [nom, liste] of Object.entries(os.networkInterfaces())) {
-    for (const details of liste ?? []) {
-      if (details.family !== 'IPv4' || details.internal) continue;
-      candidates.push({ nom, adresse: details.address });
-    }
-  }
-
-  candidates.sort((a, b) => {
-    const rangA = ordre.indexOf(a.nom);
-    const rangB = ordre.indexOf(b.nom);
-    return (rangA === -1 ? 99 : rangA) - (rangB === -1 ? 99 : rangB);
-  });
-
-  return candidates.length > 0 ? candidates[0].adresse : null;
+  const adresses = adressesReseauLocal();
+  return adresses.length > 0 ? adresses[0].adresse : null;
 }
 
 // Le serveur demarre des que ce fichier est lance. VCC_PAS_DE_SERVEUR=1 permet

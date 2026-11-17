@@ -7,7 +7,6 @@
 // Utilise par « npm run dev » et par « lancer.command ».
 
 import { spawn } from 'node:child_process';
-import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,27 +15,6 @@ const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT_API ?? 4317);
 
 /* ------------------------------------------------------------------ */
-
-/** Adresse de ce Mac sur le reseau local : celle a taper sur l'iPhone. */
-function adresseReseauLocal() {
-  const ordre = ['en0', 'en1', 'eth0', 'wlan0'];
-  const candidates = [];
-
-  for (const [nom, liste] of Object.entries(os.networkInterfaces())) {
-    for (const details of liste ?? []) {
-      if (details.family !== 'IPv4' || details.internal) continue;
-      candidates.push({ nom, adresse: details.address });
-    }
-  }
-
-  candidates.sort((a, b) => {
-    const rangA = ordre.indexOf(a.nom);
-    const rangB = ordre.indexOf(b.nom);
-    return (rangA === -1 ? 99 : rangA) - (rangB === -1 ? 99 : rangB);
-  });
-
-  return candidates.length > 0 ? candidates[0].adresse : null;
-}
 
 function binaire(nom) {
   const chemin = path.join(RACINE, 'node_modules', '.bin', nom);
@@ -90,45 +68,57 @@ function compilerInterface() {
   });
 }
 
-/** Attend que le serveur reponde, pour n'afficher l'adresse qu'une fois prete. */
+/**
+ * Attend que le serveur reponde, puis renvoie son etat (dont les adresses
+ * reseau a proposer). Renvoie null si le serveur n'a jamais repondu.
+ */
 async function attendreServeur(tentatives = 60) {
   for (let i = 0; i < tentatives; i++) {
     try {
       const reponse = await fetch(`http://127.0.0.1:${PORT}/api/etat`);
-      if (reponse.ok) return true;
+      if (reponse.ok) return await reponse.json();
     } catch {
       /* pas encore pret */
     }
     await new Promise((r) => setTimeout(r, 300));
   }
-  return false;
+  return null;
 }
 
-function banniere(ip) {
-  const lignes = [
-    '',
-    '  ViceCityClips',
-    '  ' + '─'.repeat(46),
-    '',
-  ];
+function banniere(adresses) {
+  const lignes = ['', '  ViceCityClips', '  ' + '─'.repeat(46), ''];
 
-  if (ip) {
+  if (adresses.length > 0) {
+    lignes.push("  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez :", '');
+    lignes.push(`      http://${adresses[0].adresse}:${PORT}`, '');
+
+    if (adresses.length > 1) {
+      lignes.push(
+        "  Si cette adresse ne donne rien, votre Mac en a d'autres.",
+        '  Essayez dans l\'ordre :',
+        '',
+        ...adresses.slice(1).map((a) => `      http://${a.adresse}:${PORT}      (${a.nom})`),
+        '',
+      );
+    }
+
     lignes.push(
-      "  Sur votre iPhone (meme Wi-Fi), ouvrez Safari et tapez :",
-      '',
-      `      http://${ip}:${PORT}`,
-      '',
       "  Puis bouton Partager  →  « Sur l'ecran d'accueil »",
       "  pour l'avoir comme une vraie application.",
       '',
       `  Sur ce Mac : http://localhost:${PORT}`,
+      '',
+      "  Si l'iPhone n'affiche rien : macOS a pu demander d'autoriser",
+      '  « node » a recevoir des connexions. En cas de refus, allez dans',
+      '  Reglages Systeme → Reseau → Pare-feu → Options, ou double-cliquez',
+      '  sur verifier-reseau.command dans ce dossier : il vous dira pourquoi.',
       '',
     );
   } else {
     lignes.push(
       `  Sur ce Mac : http://localhost:${PORT}`,
       '',
-      '  Adresse reseau introuvable : activez le Wi-Fi puis relancez',
+      '  Aucune adresse reseau trouvee : activez le Wi-Fi, puis relancez',
       "  pour pouvoir ouvrir l'application depuis l'iPhone.",
       '',
     );
@@ -138,7 +128,7 @@ function banniere(ip) {
     '  Vos donnees restent dans ce dossier :',
     `      ${RACINE}`,
     '',
-    "  Pour arreter : Ctrl + C, ou fermez cette fenetre.",
+    '  Pour arreter : Ctrl + C, ou fermez cette fenetre.',
     '',
   );
 
@@ -181,7 +171,6 @@ if (!verifierInstallation()) {
   });
   process.on('SIGTERM', () => arreter(0));
 
-  if (await attendreServeur()) {
-    banniere(adresseReseauLocal());
-  }
+  const etat = await attendreServeur();
+  if (etat) banniere(etat.adresses ?? []);
 }
